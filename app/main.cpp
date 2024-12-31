@@ -54,6 +54,31 @@ int main()
 
     glm::vec4 clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
 
+    bool applyGrammar = false;
+
+    std::vector<Grammar::Symbol> alphabet = {{true, "g"}, {true, "t"}};
+    // std::unique_ptr<std::list<Grammar::Symbol>> nonTerminals;
+    // nonTerminals->emplace_back(false, "S");
+    // nonTerminals->emplace_back(false, "T");
+
+    std::vector<Grammar::Rule> rules;
+    Grammar::Rule rule;
+    rule.lhs = {{false, "S"}};
+    rule.rhs = {{false, "T"}, {true, "g"}};
+    rules.emplace_back(rule);
+    rule.lhs = {{false, "T"}};
+    rule.rhs = {{true, "t"}, {false, "T"}};
+    rules.emplace_back(rule);
+    rule.lhs = {{false, "T"}};
+    rule.rhs = {{true, "t"}};
+    rules.emplace_back(rule);
+
+    Grammar grammar;
+
+    grammar.SetAlphabet(alphabet);
+    grammar.SetRules(rules);
+
+
     while (running)
     {
         SDL_Event event;
@@ -71,6 +96,9 @@ int main()
                     std::cout << "Saving frame to BMP" << std::endl;
                     SDL_SaveBMP(surface, "out.bmp");
                     // framebuffer to png
+                }
+                if (event.key.key == SDLK_G) {
+                    applyGrammar = true;
                 }
                 break;
                 case SDL_EVENT_QUIT:
@@ -94,7 +122,15 @@ int main()
         ImGui::End();
 
 
+        if (applyGrammar) {
+            grammar.ApplyRules({false, "S"});
 
+            for (Grammar::Symbol& symbol : grammar.mString) {
+                std::cout << symbol.name << std::endl;
+            }
+
+            applyGrammar = false;
+        }
 
 
 
