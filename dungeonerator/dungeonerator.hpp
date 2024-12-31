@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <random>
+#include <set>
 
 class Grammar {
 public:
@@ -21,6 +22,7 @@ public:
     };
 
     std::optional<std::list<Symbol>> ApplyRules(const Symbol& start) {
+        mString.clear();
         mString.emplace_back(start);
 
         // restrict depth to 1000
@@ -28,10 +30,11 @@ public:
         std::random_device rd;
         std::mt19937 mt(rd());
         std::uniform_int_distribution<uint32_t> dist(mRules.size());
-        size_t nrBadRules = 0;
+        std::set<size_t> badRules = {};
 
-        while (depth < 1000 && nrBadRules < mRules.size()) {
-            const Rule& rule = mRules[dist(mt) % mRules.size()];
+        while (depth < 1000 && badRules.size() !=  mRules.size()) {
+            auto idx = dist(mt) % mRules.size();
+            const Rule& rule = mRules[idx];
             if (rule.lhs.empty()) {
                 continue;
             }
@@ -39,11 +42,11 @@ public:
             auto subRange = std::ranges::search(mString.begin(), mString.end(), rule.lhs.begin(), rule.lhs.end());
             if (subRange.empty()) {
                 std::cout << "Sub range is empty" << std::endl;
-                nrBadRules++;
+                badRules.insert(idx);
                 continue;
             }
 
-            nrBadRules = 0;
+            badRules.clear();
             // inserting symbols from rule
             mString.insert(subRange.begin(), rule.rhs.begin(), rule.rhs.end());
             // erase old subrange
