@@ -35,7 +35,7 @@ public:
         while (depth < 1000 && badRules.size() !=  mRules.size()) {
             auto idx = dist(mt) % mRules.size();
             const Rule& rule = mRules[idx];
-            if (rule.lhs.empty()) {
+            if (rule.lhs.empty() || badRules.contains(idx)) {
                 continue;
             }
 
@@ -46,6 +46,7 @@ public:
                 continue;
             }
 
+            // String has been updated, other rules might work again
             badRules.clear();
             // inserting symbols from rule
             mString.insert(subRange.begin(), rule.rhs.begin(), rule.rhs.end());
