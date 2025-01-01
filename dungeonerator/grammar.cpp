@@ -16,12 +16,6 @@ void Grammar::PrintInfo() const {
     }
     std::endl(std::cout);
 
-    std::cout << "Starting String: ";
-    for (const auto & symbol : _startString) {
-        std::cout << _registry.GetSymbolData(symbol)->name;
-    }
-    std::endl(std::cout);
-
     std::cout << "Rules: " << std::endl;
 
     int ruleCounter = 0;
@@ -41,7 +35,7 @@ void Grammar::PrintInfo() const {
     }
 }
 
-void Grammar::ExecuteGrammar() {
+void Grammar::ExecuteGrammar(const std::list<SymbolID>& startString) {
     // restrict depth to 1000
     uint32_t depth = 0;
     std::random_device rd;
@@ -49,7 +43,7 @@ void Grammar::ExecuteGrammar() {
     std::uniform_int_distribution<uint32_t> dist(_rules.size());
     std::set<size_t> badRules = {};
 
-    _outputString = std::list<SymbolID>(_startString.begin(), _startString.end());
+    _outputString = std::list<SymbolID>(startString.begin(),startString.end());
 
     while (depth < 1000 && badRules.size() !=  _rules.size()) {
         auto idx = dist(mt) % _rules.size();

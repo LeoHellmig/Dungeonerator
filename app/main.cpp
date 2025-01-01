@@ -75,10 +75,24 @@ int main()
     rule.rhs = {"t"};
     rules.emplace_back(rule);
 
-    std::list<SymbolRegistry::SymbolID> startString = {reg.GetSymbol("S")};
+    Grammar formalGrammar(reg, rules);
 
-    Grammar grammar(reg, rules, startString);
+    reg.AddSymbol({true, "f"});
+    reg.AddSymbol({true, "r"});
 
+    std::vector<Rule> rewriteRules;
+
+    rule.lhs = {"t", "g"};
+    rule.rhs = {"t", "r", "g"};
+    rewriteRules.emplace_back(rule);
+    rule.lhs = {"t", "t"};
+    rule.rhs = {"t", "r", "t"};
+    rewriteRules.emplace_back(rule);
+    rule.lhs = {"t"};
+    rule.rhs = {"f"};
+    rewriteRules.emplace_back(rule);
+
+    Grammar rewriteGrammar(reg, rewriteRules);
 
     while (running)
     {
@@ -124,12 +138,22 @@ int main()
 
 
         if (applyGrammar) {
-            grammar.PrintInfo();
+            formalGrammar.PrintInfo();
 
-            grammar.ExecuteGrammar();
+            std::list<SymbolRegistry::SymbolID> startString = {reg.GetSymbol("S")};
+            formalGrammar.ExecuteGrammar(startString);
 
             std::cout << "Grammar output: ";
-            for (const auto& symbol : grammar.GetString()) {
+            for (const auto& symbol : formalGrammar.GetString()) {
+                std::cout << reg.GetSymbolData(symbol)->name;
+            }
+            endl(std::cout);
+
+            rewriteGrammar.PrintInfo();
+            rewriteGrammar.ExecuteGrammar(formalGrammar.GetString());
+
+            std::cout << "Rewrite grammar output: ";
+            for (const auto& symbol : rewriteGrammar.GetString()) {
                 std::cout << reg.GetSymbolData(symbol)->name;
             }
             endl(std::cout);
