@@ -1,7 +1,7 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 #include <glm/glm.hpp>
-#include "dungeonerator.hpp"
+#include "grammar.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
@@ -30,7 +30,7 @@ int main()
 
     unsigned int flags = 0;
 
-    window = SDL_CreateWindow("Dungenerator", SCR_WIDTH, SCR_HEIGHT, flags);
+    window = SDL_CreateWindow("Dungeonerator", SCR_WIDTH, SCR_HEIGHT, flags);
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
     SDL_SetRenderVSync(renderer, 1);
@@ -56,27 +56,28 @@ int main()
 
     bool applyGrammar = false;
 
-    std::vector<Grammar::Symbol> alphabet = {{true, "g"}, {true, "t"}};
-    // std::unique_ptr<std::list<Grammar::Symbol>> nonTerminals;
-    // nonTerminals->emplace_back(false, "S");
-    // nonTerminals->emplace_back(false, "T");
+    SymbolRegistry reg;
+    reg.AddSymbol({false, "S"});
+    reg.AddSymbol({false, "T"});
 
-    std::vector<Grammar::Rule> rules;
-    Grammar::Rule rule;
-    rule.lhs = {{false, "S"}};
-    rule.rhs = {{false, "T"}, {true, "g"}};
+    reg.AddSymbol({true, "g"});
+    reg.AddSymbol({true, "t"});
+
+    std::vector<Rule> rules;
+    Rule rule;
+    rule.lhs = {"S"};
+    rule.rhs = {{"T"}, {"g"}};
     rules.emplace_back(rule);
-    rule.lhs = {{false, "T"}};
-    rule.rhs = {{true, "t"}, {false, "T"}};
+    rule.lhs = {"T"};
+    rule.rhs = {{"t"}, {"T"}};
     rules.emplace_back(rule);
-    rule.lhs = {{false, "T"}};
-    rule.rhs = {{true, "t"}};
+    rule.lhs = {"T"};
+    rule.rhs = {"t"};
     rules.emplace_back(rule);
 
-    Grammar grammar;
+    std::list<SymbolRegistry::SymbolID> startString = {reg.GetSymbol("S")};
 
-    grammar.SetAlphabet(alphabet);
-    grammar.SetRules(rules);
+    Grammar grammar(reg, rules, startString);
 
 
     while (running)
@@ -123,11 +124,15 @@ int main()
 
 
         if (applyGrammar) {
-            grammar.ApplyRules({false, "S"});
+            grammar.PrintInfo();
 
-            for (Grammar::Symbol& symbol : grammar.mString) {
-                std::cout << symbol.name << std::endl;
+            grammar.ExecuteGrammar();
+
+            std::cout << "Grammar output: ";
+            for (const auto& symbol : grammar.GetString()) {
+                std::cout << reg.GetSymbolData(symbol)->name;
             }
+            endl(std::cout);
 
             applyGrammar = false;
         }
