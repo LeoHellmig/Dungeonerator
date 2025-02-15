@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
+#include "graph.hpp"
 
 #include <SDL3/SDL_opengl.h>
 
@@ -93,6 +94,22 @@ int main()
     rewriteRules.emplace_back(rule);
 
     Grammar rewriteGrammar(reg, rewriteRules);
+
+    Graph myGraph;
+
+    myGraph.AddVertex(1);
+    myGraph.AddVertex(2);
+    myGraph.AddVertex(3);
+    myGraph.AddEdge(1,2);
+    myGraph.AddEdge(3,2);
+    myGraph.AddEdge(1,3);
+    myGraph.PrintGraph();
+    myGraph.RemoveEdge(2,3);
+    myGraph.PrintGraph();
+    myGraph.RemoveVertex(2);
+    myGraph.PrintGraph();
+
+
 
     while (running)
     {
