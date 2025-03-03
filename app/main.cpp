@@ -95,21 +95,22 @@ int main()
 
     Grammar rewriteGrammar(reg, rewriteRules);
 
-    Graph myGraph;
+    Graph<VertexData, EdgeData> myGraph;
 
-    myGraph.AddVertex(1);
-    myGraph.AddVertex(2);
-    myGraph.AddVertex(3);
-    myGraph.AddEdge(1,2);
-    myGraph.AddEdge(3,2);
-    myGraph.AddEdge(1,3);
-    myGraph.PrintGraph();
-    myGraph.RemoveEdge(2,3);
-    myGraph.PrintGraph();
-    myGraph.RemoveVertex(2);
-    myGraph.PrintGraph();
+    auto a = myGraph.AddVertex(VertexData(1));
+    auto b = myGraph.AddVertex(VertexData(2));
+    auto c = myGraph.AddVertex(VertexData(3));
 
+    myGraph.AddEdge(a, b, EdgeData(4));
+    myGraph.AddEdge(b, c, EdgeData(5));
+    myGraph.AddEdge(c, a, EdgeData(6));
 
+    auto& vertices = myGraph.VertexData();
+
+    for (const auto & vertex : vertices)
+    {
+        std::cout << vertex.first << ": " << "data: " << vertex.second._data.a << std::endl;
+    }
 
     while (running)
     {

@@ -18,11 +18,42 @@ public:
           _data(data) {
     }
 
-private:
     VertexId _v1;
     VertexId _v2;
 
     T _data;
+};
+
+template <typename T>
+class Vertex {
+public:
+    explicit Vertex(T vertexData)
+        : _data(vertexData)
+    {
+    }
+
+    std::vector<EdgeId> _edges;
+    T _data;
+};
+
+
+
+class VertexData {
+public:
+    explicit VertexData(int a)
+        : a(a) {
+    }
+
+    int a;
+};
+
+class EdgeData {
+public:
+    explicit EdgeData(int weight)
+        : weight(weight) {
+    }
+
+    int weight;
 };
 
 template <typename vertexType, typename edgeType>
@@ -30,28 +61,26 @@ class Graph
 {
 public:
 
-    VertexId AddVertex(vertexType& vertexData)
+    VertexId AddVertex(vertexType vertexData)
     {
         VertexId curId = _nextVertex;
         _nextVertex++;
 
-        _vertices[curId]; // Add to vertices
-        _vertexData[curId] = vertexData; // Add data
+        _vertices.try_emplace(curId, Vertex(vertexData)); // Add to vertices
 
         return curId;
     }
 
-    EdgeId AddEdge(VertexId v1, VertexId v2, edgeType& edgeData)
+    EdgeId AddEdge(VertexId v1, VertexId v2, edgeType edgeData)
     {
 
         EdgeId curId = _nextEdge;
         _nextEdge++;
 
-        _vertices[v1].emplace_back(curId);
-        _vertices[v2].emplace_back(curId);
+        _vertices.at(v1)._edges.emplace_back(curId);
+        _vertices.at(v1)._edges.emplace_back(curId);
 
-        Edge<edgeType> edge = Edge<edgeType>(v1, v2, edgeData);
-        _edgeData[curId] = edge;
+        _edges.try_emplace(curId, Edge<edgeType>(v1, v2, edgeData));
 
         return curId;
     }
@@ -63,18 +92,15 @@ public:
             return;
         }
 
-        for (EdgeId edgeId& : _vertices[v]) {
-            auto& edge = _edgeData[edgeId];
+        for (EdgeId& edgeId : _vertices[v]._edges) {
+            auto& edge = _edges[edgeId];
 
             // Remove edge from both vertices
-            _vertices[edge._v1].erase(edgeId);
-            _vertices[edge._v2].erase(edgeId);
+            _vertices[edge._v1]._edges.erase(edgeId);
+            _vertices[edge._v2]._edges.erase(edgeId);
 
-            // Remove data
-            _edgeData.erase(edgeId);
-
-            // Remove vertex data
-            _vertexData.erase(v);
+            // Remove edge data
+            _edges.erase(edgeId);
         }
 
         // Remove vertex
@@ -88,7 +114,7 @@ public:
         }
 
         // Find edge id
-        EdgeId edgeId = std::find_if(_edgeData, _edgeData.end(), [&](Edge<edgeType>& edge) {
+        EdgeId edgeId = std::find_if(_edges, _edges.end(), [&](Edge<edgeType>& edge) {
             if ((edge._v1 == v1 && edge._v2 == v2) || (edge._v1 == v2 && edge._v2 == v1)) {
                 return true;
             }
@@ -96,29 +122,27 @@ public:
         });
 
         // Remove edge data
-        _edgeData.erase(edgeId);
+        _edges.erase(edgeId);
 
         // Remove edge from vertices
-        std::erase(_vertices[v1], edgeId);
-        std::erase(_vertices[v2], edgeId);
+        std::erase(_vertices[v1]._edges, edgeId);
+        std::erase(_vertices[v2]._edges, edgeId);
     }
 
+    const std::unordered_map<VertexId, Vertex<vertexType>>& VertexData()
+    {
+        return _vertices;
+    }
 
-    // void PrintGraph() const {
-    //     for (const auto& e : _graph) {
-    //         std::cout << e.first << " : ";
-    //         for (const auto& edge : e.second) {
-    //             std::cout << edge << " ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    // }
+    const std::unordered_map<EdgeId, Edge<edgeType>>& EdgeData()
+    {
+        return _edges;
+    }
 
 private:
 
-    std::unordered_map<VertexId, std::vector<EdgeId>> _vertices;
-    std::unordered_map<VertexId, vertexType> _vertexData;
-    std::unordered_map<EdgeId, Edge<edgeType>> _edgeData;
+    std::unordered_map<VertexId, Vertex<vertexType>> _vertices;
+    std::unordered_map<EdgeId, Edge<edgeType>> _edges;
 
     VertexId _nextVertex = 0;
     EdgeId _nextEdge = 0;
