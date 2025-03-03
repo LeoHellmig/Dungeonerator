@@ -97,9 +97,9 @@ int main()
 
     Graph<VertexData, EdgeData> myGraph;
 
-    auto a = myGraph.AddVertex(VertexData(1));
-    auto b = myGraph.AddVertex(VertexData(2));
-    auto c = myGraph.AddVertex(VertexData(3));
+    auto a = myGraph.AddVertex(VertexData(0));
+    auto b = myGraph.AddVertex(VertexData(1));
+    auto c = myGraph.AddVertex(VertexData(2));
 
     myGraph.AddEdge(a, b, EdgeData(4));
     myGraph.AddEdge(b, c, EdgeData(5));
@@ -107,9 +107,27 @@ int main()
 
     auto& vertices = myGraph.VertexData();
 
+    std::cout << "-----Vertices-----" << std::endl;
+
     for (const auto & vertex : vertices)
     {
-        std::cout << vertex.first << ": " << "data: " << vertex.second._data.a << std::endl;
+        std::cout << vertex.first << ": data: " << vertex.second._data.a << std::endl;
+        std::cout << "edges: " << std::endl;
+
+        for (EdgeId edge : vertex.second._edges) {
+             std::cout << edge << std::endl;
+        }
+    }
+
+    auto& edges = myGraph.EdgeData();
+
+    std::cout << "-----Edges-----" << std::endl;
+
+    for (const auto& edge : edges) {
+
+        std::cout << edge.first << ": data: " << edge.second._data.weight << std::endl;
+
+        std::cout << edge.second._v1 << " " << edge.second._v2 << std::endl;
     }
 
     while (running)

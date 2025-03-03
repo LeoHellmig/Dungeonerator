@@ -78,7 +78,7 @@ public:
         _nextEdge++;
 
         _vertices.at(v1)._edges.emplace_back(curId);
-        _vertices.at(v1)._edges.emplace_back(curId);
+        _vertices.at(v2)._edges.emplace_back(curId);
 
         _edges.try_emplace(curId, Edge<edgeType>(v1, v2, edgeData));
 
