@@ -2,6 +2,7 @@
 #include <iostream>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using gId = int;
@@ -73,7 +74,6 @@ public:
 
     EdgeId AddEdge(VertexId v1, VertexId v2, edgeType edgeData)
     {
-
         EdgeId curId = _nextEdge;
         _nextEdge++;
 
@@ -92,12 +92,18 @@ public:
             return;
         }
 
-        for (EdgeId& edgeId : _vertices[v]._edges) {
-            auto& edge = _edges[edgeId];
+        for (size_t i = 0; i < _vertices.at(v)._edges.size(); i++)
+        {
+            EdgeId edgeId = _vertices.at(v)._edges[i];
 
-            // Remove edge from both vertices
-            _vertices[edge._v1]._edges.erase(edgeId);
-            _vertices[edge._v2]._edges.erase(edgeId);
+            auto& edge = _edges.at(edgeId);
+
+            if (edge._v1 == v)
+            {
+                std::erase(_vertices.at(edge._v2)._edges, edgeId);
+            } else {
+                std::erase(_vertices.at(edge._v1)._edges, edgeId);
+            }
 
             // Remove edge data
             _edges.erase(edgeId);
@@ -114,19 +120,26 @@ public:
         }
 
         // Find edge id
-        EdgeId edgeId = std::find_if(_edges, _edges.end(), [&](Edge<edgeType>& edge) {
+        const auto& it = std::find_if(_edges.begin(), _edges.end(), [&](std::pair<EdgeId, Edge<edgeType>> pair) {
+            const auto& edge = pair.second;
             if ((edge._v1 == v1 && edge._v2 == v2) || (edge._v1 == v2 && edge._v2 == v1)) {
                 return true;
             }
             return false;
         });
 
+        if (it == _edges.end()) {
+            return;
+        }
+
+        EdgeId edgeId = it->first;
+
         // Remove edge data
         _edges.erase(edgeId);
 
         // Remove edge from vertices
-        std::erase(_vertices[v1]._edges, edgeId);
-        std::erase(_vertices[v2]._edges, edgeId);
+        std::erase(_vertices.at(v1)._edges, edgeId);
+        std::erase(_vertices.at(v2)._edges, edgeId);
     }
 
     const std::unordered_map<VertexId, Vertex<vertexType>>& VertexData()

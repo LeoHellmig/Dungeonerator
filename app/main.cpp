@@ -7,6 +7,7 @@
 #include "imgui_impl_sdlrenderer3.h"
 #include "graph.hpp"
 
+#pragma warning(disable: 4201) // Disable MSVC extension warnings
 #include <SDL3/SDL_opengl.h>
 
 constexpr int SCR_WIDTH = 1280;
@@ -105,30 +106,65 @@ int main()
     myGraph.AddEdge(b, c, EdgeData(5));
     myGraph.AddEdge(c, a, EdgeData(6));
 
-    auto& vertices = myGraph.VertexData();
-
-    std::cout << "-----Vertices-----" << std::endl;
-
-    for (const auto & vertex : vertices)
     {
-        std::cout << vertex.first << ": data: " << vertex.second._data.a << std::endl;
-        std::cout << "edges: " << std::endl;
+        auto& vertices = myGraph.VertexData();
 
-        for (EdgeId edge : vertex.second._edges) {
-             std::cout << edge << std::endl;
+        std::cout << "-----Vertices-----" << std::endl;
+
+        for (const auto & vertex : vertices)
+        {
+            std::cout << vertex.first << ": data: " << vertex.second._data.a << std::endl;
+            std::cout << "edges: " << std::endl;
+
+            for (EdgeId edge : vertex.second._edges) {
+                std::cout << edge << std::endl;
+            }
+        }
+
+        auto& edges = myGraph.EdgeData();
+
+        std::cout << "-----Edges-----" << std::endl;
+
+        for (const auto& edge : edges) {
+
+            std::cout << edge.first << ": data: " << edge.second._data.weight << std::endl;
+
+            std::cout << edge.second._v1 << " " << edge.second._v2 << std::endl;
         }
     }
 
-    auto& edges = myGraph.EdgeData();
+    myGraph.RemoveEdge(0, 1);
 
-    std::cout << "-----Edges-----" << std::endl;
+    myGraph.RemoveVertex(2);
 
-    for (const auto& edge : edges) {
 
-        std::cout << edge.first << ": data: " << edge.second._data.weight << std::endl;
+    {
+        auto& vertices = myGraph.VertexData();
 
-        std::cout << edge.second._v1 << " " << edge.second._v2 << std::endl;
+        std::cout << "-----Vertices-----" << std::endl;
+
+        for (const auto & vertex : vertices)
+        {
+            std::cout << vertex.first << ": data: " << vertex.second._data.a << std::endl;
+            std::cout << "edges: " << std::endl;
+
+            for (EdgeId edge : vertex.second._edges) {
+                std::cout << edge << std::endl;
+            }
+        }
+
+        auto& edges = myGraph.EdgeData();
+
+        std::cout << "-----Edges-----" << std::endl;
+
+        for (const auto& edge : edges) {
+
+            std::cout << edge.first << ": data: " << edge.second._data.weight << std::endl;
+
+            std::cout << edge.second._v1 << " " << edge.second._v2 << std::endl;
+        }
     }
+
 
     while (running)
     {
