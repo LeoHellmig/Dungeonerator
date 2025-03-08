@@ -3,8 +3,8 @@ project(dungeonerator)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(HEADERS dungeonerator.hpp symbol_data.hpp symbol_registry.hpp grammar.hpp grammar_rule.hpp graph.hpp)
-set(SOURCES dungeonerator.cpp symbol_data.cpp symbol_registry.cpp grammar.cpp grammar_rule.cpp graph.cpp)
+set(HEADERS dungeonerator.hpp symbol_data.hpp symbol_registry.hpp grammar.hpp grammar_rule.hpp graph.hpp graph_rewriter.hpp)
+set(SOURCES dungeonerator.cpp symbol_data.cpp symbol_registry.cpp grammar.cpp grammar_rule.cpp graph.cpp graph_rewriter.cpp)
 
 add_library(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 
