@@ -17,3 +17,5 @@ if(MSVC)
 else()
     target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic)
 endif()
+
+add_compile_definitions(-DLOGGING)

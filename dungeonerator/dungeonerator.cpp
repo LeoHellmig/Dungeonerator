@@ -6,6 +6,15 @@
 #include "generationUtils/PoissonGenerator.hpp"
 #pragma clang diagnostic pop
 #include <random>
+#include <chrono>
+
+using Timer = std::chrono::high_resolution_clock;
+
+#ifdef LOGGING
+double TimeToDouble(const std::common_type_t<std::chrono::duration<long long, std::ratio<1, 1000000000>>, std::chrono::duration<long long, std::ratio<1, 1000000000>>> time) {
+	return std::chrono::duration_cast<std::chrono::duration<double>>(time).count();
+}
+#endif
 
 bool Dungeon::DungeonVertex::operator==(const DungeonVertex& other) const
 {
@@ -30,17 +39,15 @@ bool Dungeon::DungeonGenerationData::operator==(const DungeonGenerationData& oth
 }
 
 void Dungeon::Generate() {
-	//Timer timer{};
-	//timer.Reset();
-	//float elapsed = 0.f;
-
-
-	//LOG(LogEngine, Message, "Dungeon Generation started");
+#ifdef LOGGING
+	const auto start = Timer::now();
+	auto running = Timer::now();
+	std::cout << "Dungeon generation started" << std::endl;
+#endif
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> dis(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
-
 
 	std::vector<Dungeon::DungeonVertex> verts{};
 	std::vector<Dungeon::DungeonEdge> edges{};
@@ -49,8 +56,10 @@ void Dungeon::Generate() {
 
 	const auto points = PoissonGenerator::generatePoissonPoints(mGenerationData.mNrVertices, PRNG, true);
 
-	//LOG(LogEngine, Message, "Poisson in {} seconds", timer.GetSecondsElapsed());
-	//elapsed = timer.GetSecondsElapsed();
+#ifdef LOGGING
+	std::cout << "Poisson in "<< TimeToDouble(Timer::now() - running) << " seconds"<< std::endl;
+	running = Timer::now();
+#endif
 
 	std::vector<float> coords{};
 	coords.reserve(points.size() * 2);
@@ -66,8 +75,10 @@ void Dungeon::Generate() {
 		verts.push_back(Dungeon::DungeonVertex(x, y, dis(gen)));
 	}
 
-	//LOG(LogEngine, Message, "Converting poisson to coords in {} seconds", timer.GetSecondsElapsed() - elapsed);
-	//elapsed = timer.GetSecondsElapsed();
+#ifdef LOGGING
+	std::cout << "Converting poisson to coords in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	delaunator::Delaunator d(coords);
 
@@ -85,8 +96,10 @@ void Dungeon::Generate() {
 		addEdge(static_cast<std::uint32_t>(d.triangles[i + 2]), static_cast<std::uint32_t>(d.triangles[i]));
 	}
 
-	//LOG(LogEngine, Message, "Delauny in {} seconds", timer.GetSecondsElapsed() - elapsed);
-	//elapsed = timer.GetSecondsElapsed();
+#ifdef LOGGING
+	std::cout << "Delauny in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	for (auto& vert : verts)
 	{
@@ -126,8 +139,10 @@ void Dungeon::Generate() {
 		}
 	}
 
-	//LOG(LogEngine, Message, "Cleaning edges in {} seconds", timer.GetSecondsElapsed() - elapsed);
-	// = timer.GetSecondsElapsed();
+#ifdef LOGGING
+	std::cout << "Cleaning edges in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	std::vector<std::uint32_t> mstSet {};
 	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
@@ -192,7 +207,11 @@ void Dungeon::Generate() {
 		mstVerts[pair.second].mConnections.emplace_back(pair.first);
 	}
 
-	//LOG(LogEngine, Message, "Made MST in {} seconds, required {} searches", timer.GetSecondsElapsed() - elapsed, nrOfSearches);
+#ifdef LOGGING
+	std::cout << "Made MST in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	std::cout << "MST required " << nrOfSearches << " searches" << std::endl;
+	running = Timer::now();
+#endif
 
 	auto nextHalfEdge = [](size_t e) {
 			return ((e % 3) == 2) ? e - 2 : e + 1;
@@ -221,8 +240,10 @@ void Dungeon::Generate() {
 		mstVerts[p2].mConnections.push_back(p1);
 	}
 
-	//elapsed = timer.GetSecondsElapsed();
-	//LOG(LogEngine, Message, "Dungeon generated of size {} in {} seconds", mAsset.mGenerationData.mNrVertices, elapsed);
+#ifdef LOGGING
+	std::cout << "Added extra edges in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	std::cout << "Dungeon generated in "<< TimeToDouble(Timer::now() - start) << " seconds" << std::endl;
+#endif
 
 	mVertices = mstVerts;
 	mEdges = mstEdges;

@@ -70,16 +70,3 @@ public:
 
     DungeonGenerationData mGenerationData{};
 };
-
-class Dungeonerator {
-public:
-
-
-
-
-
-private:
-
-
-
-};
