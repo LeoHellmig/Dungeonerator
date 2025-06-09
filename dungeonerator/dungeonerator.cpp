@@ -211,7 +211,7 @@ void Dungeon::Generate() {
 			{
 				nrOfSearches++;
 				std::uint32_t key = intDistribution(gen);
-				if (key < min && mstKeySet.find(vert.mConnections[j]) == mstKeySet.end())
+				if (key < min && mstKeySet.contains(vert.mConnections[j]))
 				{
 					a = mstSet[i];
 					b = vert.mConnections[j];
