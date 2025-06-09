@@ -31,6 +31,15 @@ bool Dungeon::DungeonEdge::operator==(const DungeonEdge& other) const
 		&& this->mNode2 == other.mNode2;
 }
 
+template<> struct std::hash<Dungeon::DungeonEdge>
+{
+	std::size_t operator()(const Dungeon::DungeonEdge& s) const noexcept
+	{
+		uint64_t combined = (uint64_t(s.mNode1) << 32) | s.mNode2;
+		return std::hash<uint64_t>{}(combined);
+	}
+};
+
 bool Dungeon::DungeonGenerationData::operator==(const DungeonGenerationData& other) const
 {
 	return this->mNrVertices == other.mNrVertices
@@ -108,7 +117,7 @@ void Dungeon::Generate() {
 	}
 
 	{ // Remove double edges
-		std::vector<Dungeon::DungeonEdge> encounteredEdges{};
+		std::unordered_set<Dungeon::DungeonEdge> encounteredEdges{};
 
 		for (size_t i = 0; i < edges.size(); i++)
 		{
@@ -117,22 +126,20 @@ void Dungeon::Generate() {
 			inverseEdge.mNode1 = edge.mNode2;
 			inverseEdge.mNode2 = edge.mNode1;
 
-			auto it = std::find(encounteredEdges.begin(), encounteredEdges.end(), edge);
-			if (it != encounteredEdges.end())
+			if (encounteredEdges.contains(edge))
 			{
 				edges.erase(edges.begin() + i);
 				i--;
 			}
 			else
 			{
-				it = std::find(encounteredEdges.begin(), encounteredEdges.end(), inverseEdge);
-				if (it != encounteredEdges.end())
+				if (encounteredEdges.contains(inverseEdge))
 				{
 					edges.erase(edges.begin() + i);
 					i--;
 				}
-				encounteredEdges.emplace_back(edge);
-				encounteredEdges.emplace_back(inverseEdge);
+				encounteredEdges.emplace(edge);
+				encounteredEdges.emplace(inverseEdge);
 
 				verts[edge.mNode1].mConnections.emplace_back(edge.mNode2);
 				verts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
