@@ -7,6 +7,7 @@
 #pragma clang diagnostic pop
 #include <random>
 #include <chrono>
+#include <unordered_set>
 
 using Timer = std::chrono::high_resolution_clock;
 
@@ -153,6 +154,8 @@ void Dungeon::Generate() {
 	}
 
 	std::vector<Dungeon::DungeonEdge> mstEdges{};
+	std::unordered_set<std::uint32_t> mstKeySet {};
+	mstEdges.reserve(mstVerts.size() * 2);
 	mstVerts.reserve(points.size());
 
 	mstSet.reserve(points.size());
@@ -162,44 +165,65 @@ void Dungeon::Generate() {
 
 	std::vector<std::uint32_t> keys(points.size());
 	std::uniform_int<std::uint32_t> intDistribution;
-	for (auto& key : keys)
-	{
-		key = intDistribution(gen);
-	}
+	// for (auto& key : keys)
+	// {
+	// 	key = intDistribution(gen);
+	// }
 
 	std::uint32_t nrOfSearches = 0;
 
 	// <vert, nextvert>
-	auto findMin = [&]() -> std::pair<std::uint32_t, std::uint32_t>
-		{
-			std::uint32_t a {};
-			std::uint32_t b {};
-			std::uint32_t min = INT_MAX;
-
-			for (size_t i = 0; i < mstSet.size(); i++)
-			{
-				auto& vert = verts[mstSet[i]];
-				for (size_t j = 0; j < vert.mConnections.size(); j++)
-				{
-					nrOfSearches++;
-					std::uint32_t key = intDistribution(gen);
-					if (key < min && std::find(mstSet.begin(), mstSet.end(), vert.mConnections[j]) == mstSet.end())
-					{
-						a = mstSet[i];
-						b = vert.mConnections[j];
-						min = key;
-					}
-				}
-			}
-
-			return std::make_pair(a, b);
-		};
+	// auto findMin = [&]() -> std::pair<std::uint32_t, std::uint32_t>
+	// 	{
+	// 		std::uint32_t a {};
+	// 		std::uint32_t b {};
+	// 		std::uint32_t min = INT_MAX;
+	//
+	// 		for (size_t i = 0; i < mstSet.size(); i++)
+	// 		{
+	// 			auto& vert = verts[mstSet[i]];
+	// 			for (size_t j = 0; j < vert.mConnections.size(); j++)
+	// 			{
+	// 				nrOfSearches++;
+	// 				std::uint32_t key = intDistribution(gen);
+	// 				if (key < min && std::find(mstSet.begin(), mstSet.end(), vert.mConnections[j]) == mstSet.end())
+	// 				{
+	// 					a = mstSet[i];
+	// 					b = vert.mConnections[j];
+	// 					min = key;
+	// 				}
+	// 			}
+	// 		}
+	//
+	// 		return std::make_pair(a, b);
+	// 	};
 
 	while (mstSet.size() < points.size())
 	{
+		std::uint32_t a {};
+		std::uint32_t b {};
+		std::uint32_t min = INT_MAX;
+
+		for (size_t i = 0; i < mstSet.size(); i++)
+		{
+			auto& vert = verts[mstSet[i]];
+			for (size_t j = 0; j < vert.mConnections.size(); j++)
+			{
+				nrOfSearches++;
+				std::uint32_t key = intDistribution(gen);
+				if (key < min && mstKeySet.find(vert.mConnections[j]) == mstKeySet.end())
+				{
+					a = mstSet[i];
+					b = vert.mConnections[j];
+					min = key;
+				}
+			}
+		}
+
 		// Keep adding verts to the set
-		auto pair = findMin();
+		auto pair = std::make_pair(a, b);
 		mstSet.emplace_back(pair.second);
+		mstKeySet.emplace(pair.second);
 
 		mstEdges.emplace_back(Dungeon::DungeonEdge(pair.first, pair.second));
 
