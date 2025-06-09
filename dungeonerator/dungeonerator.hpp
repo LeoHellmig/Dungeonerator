@@ -5,13 +5,19 @@
 class Dungeon
 {
 public:
-    Dungeon() = default;
+
+    struct DungeonGenerationData;
+
+    explicit Dungeon(DungeonGenerationData generationData, float sizeX, float sizeY)
+        : mSizeX(sizeX), mSizeY(sizeY), mGenerationData(generationData) {}
 
     Dungeon(Dungeon&&) noexcept = default;
     Dungeon(const Dungeon&) = default;
 
     Dungeon& operator=(Dungeon&&) = delete;
     Dungeon& operator=(const Dungeon&) = default;
+
+    void Generate();
 
     struct DungeonVertex
     {
@@ -41,14 +47,12 @@ public:
         bool operator==(const DungeonEdge& other) const;
     };
 
-    std::vector<DungeonVertex> mVertices{};
-    std::vector<DungeonEdge> mEdges{};
-
-    float mSizeX = 100.0f;
-    float mSizeY = 100.0f;
-
     struct DungeonGenerationData
     {
+        DungeonGenerationData() = default;
+        DungeonGenerationData(int verts, int loops, float minVertexSize, float maxVertexSize)
+            : mNrVertices(verts), mNrLoops(loops), mMinVertexSize(minVertexSize), mMaxVertexSize(maxVertexSize) {}
+
         int mNrVertices = 30;
         int mNrLoops = 5;
 
@@ -58,9 +62,13 @@ public:
         bool operator==(const DungeonGenerationData& other) const;
     };
 
-    DungeonGenerationData mGenerationData{};
+    std::vector<DungeonVertex> mVertices{};
+    std::vector<DungeonEdge> mEdges{};
 
-    void Generate();
+    float mSizeX = 100.0f;
+    float mSizeY = 100.0f;
+
+    DungeonGenerationData mGenerationData{};
 };
 
 class Dungeonerator {

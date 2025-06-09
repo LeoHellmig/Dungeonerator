@@ -166,7 +166,8 @@ int main()
         }
     }
 
-    Dungeon myDungeon;
+    Dungeon::DungeonGenerationData generationData(50, 10, 0.5, 5.0);
+    Dungeon myDungeon(generationData, 100.f, 100.f);
     myDungeon.Generate();
 
     std::cout << "Vertices: " << std::endl;
