@@ -173,7 +173,7 @@ int main()
     for (int i = 0; i < myDungeon.mVertices.size(); i++) {
         auto& vertex = myDungeon.mVertices[i];
 
-        std::cout << "Vertex" << i << " at: " << vertex.mPx << ", " << vertex.mPy << " size of: " << vertex.mSize << std::endl;
+        std::cout << "Vertex " << i << " at: " << vertex.mPx << ", " << vertex.mPy << " size of: " << vertex.mSize << std::endl;
 
         std::cout << "Edges: ";
         for (auto& edge : vertex.mConnections) {
@@ -181,6 +181,13 @@ int main()
         }
 
         std::cout << std::endl;
+    }
+
+    std::cout << "Edges: " << std::endl;
+
+    for (int i = 0; i < myDungeon.mEdges.size(); i++) {
+        auto& edge = myDungeon.mEdges[i];
+        std::cout << i << ": " << edge.mNode1 << ", " << edge.mNode2 << std::endl;
     }
 
     while (running)
