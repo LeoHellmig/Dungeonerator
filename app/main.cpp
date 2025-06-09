@@ -6,6 +6,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
 #include "graph.hpp"
+#include "dungeonerator.hpp"
 
 #pragma warning(disable: 4201) // Disable MSVC extension warnings
 #include <SDL3/SDL_opengl.h>
@@ -165,6 +166,22 @@ int main()
         }
     }
 
+    Dungeon myDungeon;
+    myDungeon.Generate();
+
+    std::cout << "Vertices: " << std::endl;
+    for (int i = 0; i < myDungeon.mVertices.size(); i++) {
+        auto& vertex = myDungeon.mVertices[i];
+
+        std::cout << "Vertex" << i << " at: " << vertex.mPx << ", " << vertex.mPy << " size of: " << vertex.mSize << std::endl;
+
+        std::cout << "Edges: ";
+        for (auto& edge : vertex.mConnections) {
+            std::cout << edge << ", ";
+        }
+
+        std::cout << std::endl;
+    }
 
     while (running)
     {
@@ -201,13 +218,10 @@ int main()
             ImGui::ShowDemoWindow(&showDemoWindow);
         }
 
-//
-//
-//
+
         ImGui::Begin("Hello");
         ImGui::DragFloat3("clear color", &clearColor.x, 1, 0, 255);
         ImGui::End();
-
 
         if (applyGrammar) {
             formalGrammar.PrintInfo();

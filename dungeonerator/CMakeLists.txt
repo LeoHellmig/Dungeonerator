@@ -8,7 +8,9 @@ set(SOURCES dungeonerator.cpp symbol_data.cpp symbol_registry.cpp grammar.cpp gr
 
 add_library(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/)
+target_include_directories(${PROJECT_NAME}
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/
+        INTERFACE generationUtils)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PUBLIC /W4 /WX)
