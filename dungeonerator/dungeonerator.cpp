@@ -187,7 +187,7 @@ void Dungeon::Generate() {
 
 	std::vector<std::uint32_t> keys{};
 	keys.reserve(edgeCount);
-	for (int i = 0; i < edgeCount; i++) {
+	for (size_t i = 0; i < edgeCount; i++) {
 		keys.emplace_back(intDistribution(gen));
 	}
 
@@ -198,38 +198,40 @@ void Dungeon::Generate() {
 	running = Timer::now();
 #endif
 
-	while (mstSet.size() <= points.size())
+	size_t pointsSize = points.size();
+	size_t mstSize = mstSet.size();
+
+	while (mstSize <= pointsSize)
 	{
 		std::uint32_t a {};
 		std::uint32_t b {};
 		std::uint32_t min = INT_MAX;
 
-		for (size_t i = 0; i < mstSet.size(); i++)
+		for (size_t i = 0; i < mstSize; i++)
 		{
 			const auto& vert = verts[mstSet[i]];
 			for (size_t j = 0; j < vert.mConnections.size(); j++)
 			{
-				nrOfSearches++;
+				++nrOfSearches;
 				std::uint32_t edge = vert.mConnections[j];
 				std::uint32_t key = keys[edge];
 				if (key < min && !mstKeySet.contains(edge))
 				{
 					a = mstSet[i];
-					b = vert.mConnections[j];
+					b = edge;
 					min = key;
 				}
 			}
 		}
 
+		++mstSize;
 		// Keep adding verts to the set
-		auto pair = std::make_pair(a, b);
+		mstSet.emplace_back(b);
+		mstKeySet.emplace(b);
 
-		mstSet.emplace_back(pair.second);
-		mstKeySet.emplace(pair.second);
-
-		mstEdges.emplace_back(pair.first, pair.second);
-		mstVerts[pair.first].mConnections.emplace_back(pair.second);
-		mstVerts[pair.second].mConnections.emplace_back(pair.first);
+		mstEdges.emplace_back(a, b);
+		mstVerts[a].mConnections.emplace_back(b);
+		mstVerts[b].mConnections.emplace_back(a);
 	}
 
 #ifdef LOGGING
