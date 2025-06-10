@@ -153,57 +153,25 @@ void Dungeon::Generate() {
 #endif
 
 	std::vector<std::uint32_t> mstSet {};
-	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
 
+	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
 	for (auto& vert : mstVerts)
 	{
 		vert.mConnections.clear();
 	}
 
 	std::vector<Dungeon::DungeonEdge> mstEdges{};
-	std::unordered_set<std::uint32_t> mstKeySet {};
-	mstEdges.reserve(mstVerts.size() * 2);
-	mstVerts.reserve(points.size());
-
-	mstSet.reserve(points.size());
+	std::unordered_set<std::uint32_t> mstKeySet{};
 	mstSet.emplace_back(0);
 	mstVerts.emplace_back(verts[0]);
-
-
-	std::vector<std::uint32_t> keys(points.size());
 	std::uniform_int<std::uint32_t> intDistribution;
-	// for (auto& key : keys)
-	// {
-	// 	key = intDistribution(gen);
-	// }
 
 	std::uint32_t nrOfSearches = 0;
 
-	// <vert, nextvert>
-	// auto findMin = [&]() -> std::pair<std::uint32_t, std::uint32_t>
-	// 	{
-	// 		std::uint32_t a {};
-	// 		std::uint32_t b {};
-	// 		std::uint32_t min = INT_MAX;
-	//
-	// 		for (size_t i = 0; i < mstSet.size(); i++)
-	// 		{
-	// 			auto& vert = verts[mstSet[i]];
-	// 			for (size_t j = 0; j < vert.mConnections.size(); j++)
-	// 			{
-	// 				nrOfSearches++;
-	// 				std::uint32_t key = intDistribution(gen);
-	// 				if (key < min && std::find(mstSet.begin(), mstSet.end(), vert.mConnections[j]) == mstSet.end())
-	// 				{
-	// 					a = mstSet[i];
-	// 					b = vert.mConnections[j];
-	// 					min = key;
-	// 				}
-	// 			}
-	// 		}
-	//
-	// 		return std::make_pair(a, b);
-	// 	};
+#ifdef LOGGING
+	std::cout << "MST init "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	while (mstSet.size() < points.size())
 	{
@@ -213,7 +181,7 @@ void Dungeon::Generate() {
 
 		for (size_t i = 0; i < mstSet.size(); i++)
 		{
-			auto& vert = verts[mstSet[i]];
+			const auto& vert = verts[mstSet[i]];
 			for (size_t j = 0; j < vert.mConnections.size(); j++)
 			{
 				nrOfSearches++;
@@ -229,11 +197,11 @@ void Dungeon::Generate() {
 
 		// Keep adding verts to the set
 		auto pair = std::make_pair(a, b);
+
 		mstSet.emplace_back(pair.second);
 		mstKeySet.emplace(pair.second);
 
-		mstEdges.emplace_back(Dungeon::DungeonEdge(pair.first, pair.second));
-
+		mstEdges.emplace_back(pair.first, pair.second);
 		mstVerts[pair.first].mConnections.emplace_back(pair.second);
 		mstVerts[pair.second].mConnections.emplace_back(pair.first);
 	}
