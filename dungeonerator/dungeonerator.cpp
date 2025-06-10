@@ -8,6 +8,7 @@
 #include <random>
 #include <chrono>
 #include <unordered_set>
+#include <forward_list>
 
 using Timer = std::chrono::high_resolution_clock;
 
@@ -61,6 +62,8 @@ void Dungeon::Generate() {
 
 	std::vector<Dungeon::DungeonVertex> verts{};
 	std::vector<Dungeon::DungeonEdge> edges{};
+	std::forward_list<Dungeon::DungeonEdge> listEdges{};
+	size_t nrEdges = 0;
 
 	PoissonGenerator::DefaultPRNG PRNG(std::time(NULL));
 
@@ -96,9 +99,10 @@ void Dungeon::Generate() {
 	{
 		const auto& addEdge = [&](std::uint32_t a, std::uint32_t b)
 			{
-				edges.push_back(Dungeon::DungeonEdge(a, b));
+				listEdges.emplace_front(a, b);
 				verts[a].mConnections.push_back(b);
 				verts[b].mConnections.push_back(a);
+				++nrEdges;
 			};
 
 		addEdge(static_cast<std::uint32_t>(d.triangles[i]), static_cast<std::uint32_t>(d.triangles[i + 1]));
@@ -119,30 +123,41 @@ void Dungeon::Generate() {
 	{ // Remove double edges
 		std::unordered_set<Dungeon::DungeonEdge> encounteredEdges{};
 
-		for (size_t i = 0; i < edges.size(); i++)
+		auto prev = listEdges.before_begin();
+		auto it = listEdges.begin();
+
+		for (size_t i = 0; i < nrEdges - 1; i++)
 		{
-			auto& edge = edges[i];
+			auto& edge = *it;
 			Dungeon::DungeonEdge inverseEdge(edge);
 			inverseEdge.mNode1 = edge.mNode2;
 			inverseEdge.mNode2 = edge.mNode1;
 
 			if (encounteredEdges.contains(edge))
 			{
-				edges.erase(edges.begin() + i);
-				i--;
+				listEdges.erase_after(prev);
 			}
 			else
 			{
 				if (encounteredEdges.contains(inverseEdge))
 				{
-					edges.erase(edges.begin() + i);
-					i--;
+					listEdges.erase_after(prev);
 				}
 				encounteredEdges.emplace(edge);
 				encounteredEdges.emplace(inverseEdge);
 
 				verts[edge.mNode1].mConnections.emplace_back(edge.mNode2);
 				verts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
+			}
+
+			++prev;
+			if (prev == listEdges.end()) {
+				break;
+			}
+			it = prev;
+			++it;
+			if (it == listEdges.end()) {
+				break;
 			}
 		}
 	}
