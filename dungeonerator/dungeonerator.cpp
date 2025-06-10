@@ -120,6 +120,8 @@ void Dungeon::Generate() {
 		vert.mConnections.clear();
 	}
 
+	size_t edgeCount = 0;
+
 	{ // Remove double edges
 		std::unordered_set<Dungeon::DungeonEdge> encounteredEdges{};
 
@@ -148,6 +150,8 @@ void Dungeon::Generate() {
 
 				verts[edge.mNode1].mConnections.emplace_back(edge.mNode2);
 				verts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
+
+				++edgeCount;
 			}
 
 			++prev;
@@ -181,6 +185,12 @@ void Dungeon::Generate() {
 	mstVerts.emplace_back(verts[0]);
 	std::uniform_int<std::uint32_t> intDistribution;
 
+	std::vector<std::uint32_t> keys{};
+	keys.reserve(edgeCount);
+	for (int i = 0; i < edgeCount; i++) {
+		keys.emplace_back(intDistribution(gen));
+	}
+
 	std::uint32_t nrOfSearches = 0;
 
 #ifdef LOGGING
@@ -188,7 +198,7 @@ void Dungeon::Generate() {
 	running = Timer::now();
 #endif
 
-	while (mstSet.size() < points.size())
+	while (mstSet.size() <= points.size())
 	{
 		std::uint32_t a {};
 		std::uint32_t b {};
@@ -200,8 +210,9 @@ void Dungeon::Generate() {
 			for (size_t j = 0; j < vert.mConnections.size(); j++)
 			{
 				nrOfSearches++;
-				std::uint32_t key = intDistribution(gen);
-				if (key < min && !mstKeySet.contains(vert.mConnections[j]))
+				std::uint32_t edge = vert.mConnections[j];
+				std::uint32_t key = keys[edge];
+				if (key < min && !mstKeySet.contains(edge))
 				{
 					a = mstSet[i];
 					b = vert.mConnections[j];
