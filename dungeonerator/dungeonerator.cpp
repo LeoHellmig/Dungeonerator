@@ -61,8 +61,6 @@ void Dungeon::Generate() {
 	std::uniform_real_distribution<float> dis(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
 
 	std::vector<Dungeon::DungeonVertex> verts{};
-	std::vector<Dungeon::DungeonEdge> edges{};
-	std::forward_list<Dungeon::DungeonEdge> listEdges{};
 	size_t nrEdges = 0;
 
 	PoissonGenerator::DefaultPRNG PRNG(mGenerationData.mSeed);
@@ -104,7 +102,6 @@ void Dungeon::Generate() {
 	{
 		const auto& addEdge = [&](std::uint32_t a, std::uint32_t b)
 			{
-				listEdges.emplace_front(a, b);
 				verts[a].mConnections.push_back(b);
 				verts[b].mConnections.push_back(a);
 				++nrEdges;
@@ -120,62 +117,6 @@ void Dungeon::Generate() {
 	running = Timer::now();
 #endif
 
-	for (auto& vert : verts)
-	{
-		vert.mConnections.clear();
-	}
-
-	size_t edgeCount = 0;
-
-	{ // Remove double edges
-		std::unordered_set<Dungeon::DungeonEdge> encounteredEdges{};
-
-		auto prev = listEdges.before_begin();
-		auto it = listEdges.begin();
-
-		for (size_t i = 0; i < nrEdges - 1; i++)
-		{
-			auto& edge = *it;
-			Dungeon::DungeonEdge inverseEdge(edge);
-			inverseEdge.mNode1 = edge.mNode2;
-			inverseEdge.mNode2 = edge.mNode1;
-
-			if (encounteredEdges.contains(edge))
-			{
-				listEdges.erase_after(prev);
-			}
-			else
-			{
-				if (encounteredEdges.contains(inverseEdge))
-				{
-					listEdges.erase_after(prev);
-				}
-				encounteredEdges.emplace(edge);
-				encounteredEdges.emplace(inverseEdge);
-
-				verts[edge.mNode1].mConnections.emplace_back(edge.mNode2);
-				verts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
-
-				++edgeCount;
-			}
-
-			++prev;
-			if (prev == listEdges.end()) {
-				break;
-			}
-			it = prev;
-			++it;
-			if (it == listEdges.end()) {
-				break;
-			}
-		}
-	}
-
-#ifdef LOGGING
-	std::cout << "Cleaning edges in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
-	running = Timer::now();
-#endif
-
 	std::vector<std::uint32_t> mstSet {};
 
 	std::uniform_real_distribution<float> roomTypeDist(0.0f, 1.0f);
@@ -184,22 +125,27 @@ void Dungeon::Generate() {
 	{
 		float roomType = roomTypeDist(gen);
 
-		vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
+		if (mGenerationData.mGenerateGameplayContent) {
+			vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
+		}
+
 		vert.mConnections.clear();
 	}
 
-	mstVerts.front().mType = Dungeon::RoomType::START;
-	mstVerts.back().mType = Dungeon::RoomType::BOSS;
+	if (mGenerationData.mGenerateGameplayContent) {
+		mstVerts.front().mType = Dungeon::RoomType::START;
+		mstVerts.back().mType = Dungeon::RoomType::BOSS;
+	}
 
 	std::vector<Dungeon::DungeonEdge> mstEdges{};
 	std::unordered_set<std::uint32_t> mstKeySet{};
 	mstSet.emplace_back(0);
-	//mstVerts.emplace_back(verts[0]);
-	std::uniform_int<std::uint32_t> intDistribution;
+	mstKeySet.emplace(0);
+	std::uniform_int<std::uint32_t> intDistribution(0, INT_MAX);
 
 	std::vector<std::uint32_t> keys{};
-	keys.reserve(edgeCount);
-	for (size_t i = 0; i < edgeCount + 1; i++) {
+	keys.reserve(nrEdges);
+	for (size_t i = 0; i < nrEdges + 1; i++) {
 		keys.emplace_back(intDistribution(gen));
 	}
 
@@ -213,7 +159,7 @@ void Dungeon::Generate() {
 	size_t pointsSize = points.size();
 	size_t mstSize = mstSet.size();
 
-	while (mstSize <= pointsSize)
+	while (mstSize < pointsSize)
 	{
 		std::uint32_t a {};
 		std::uint32_t b {};
