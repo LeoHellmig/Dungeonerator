@@ -56,8 +56,8 @@ void Dungeon::Generate() {
 	std::cout << "Dungeon generation started" << std::endl;
 #endif
 
-	std::random_device rd;
-	std::mt19937 gen(rd());
+	//std::random_device rd;
+	std::mt19937 gen(mGenerationData.mSeed);
 	std::uniform_real_distribution<float> dis(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
 
 	std::vector<Dungeon::DungeonVertex> verts{};
@@ -65,9 +65,14 @@ void Dungeon::Generate() {
 	std::forward_list<Dungeon::DungeonEdge> listEdges{};
 	size_t nrEdges = 0;
 
-	PoissonGenerator::DefaultPRNG PRNG(std::time(NULL));
+	PoissonGenerator::DefaultPRNG PRNG(mGenerationData.mSeed);
 
-	const auto points = PoissonGenerator::generatePoissonPoints(mGenerationData.mNrVertices, PRNG, true);
+	auto points = PoissonGenerator::generatePoissonPoints(mGenerationData.mNrVertices, PRNG, mGenerationData.mIsCircle);
+
+	if (points.size() > mGenerationData.mNrVertices)
+	{
+		points.erase(points.end() - (points.size() - static_cast<size_t>(mGenerationData.mNrVertices)), points.end());
+	}
 
 #ifdef LOGGING
 	std::cout << "Poisson in "<< TimeToDouble(Timer::now() - running) << " seconds"<< std::endl;
@@ -173,25 +178,32 @@ void Dungeon::Generate() {
 
 	std::vector<std::uint32_t> mstSet {};
 
+	std::uniform_real_distribution<float> roomTypeDist(0.0f, 1.0f);
 	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
 	for (auto& vert : mstVerts)
 	{
+		float roomType = roomTypeDist(gen);
+
+		vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
 		vert.mConnections.clear();
 	}
+
+	mstVerts.front().mType = Dungeon::RoomType::START;
+	mstVerts.back().mType = Dungeon::RoomType::BOSS;
 
 	std::vector<Dungeon::DungeonEdge> mstEdges{};
 	std::unordered_set<std::uint32_t> mstKeySet{};
 	mstSet.emplace_back(0);
-	mstVerts.emplace_back(verts[0]);
+	//mstVerts.emplace_back(verts[0]);
 	std::uniform_int<std::uint32_t> intDistribution;
 
 	std::vector<std::uint32_t> keys{};
 	keys.reserve(edgeCount);
-	for (size_t i = 0; i < edgeCount; i++) {
+	for (size_t i = 0; i < edgeCount + 1; i++) {
 		keys.emplace_back(intDistribution(gen));
 	}
 
-	std::uint32_t nrOfSearches = 0;
+	std::size_t nrOfSearches = 0;
 
 #ifdef LOGGING
 	std::cout << "MST init "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
@@ -244,8 +256,10 @@ void Dungeon::Generate() {
 			return ((e % 3) == 2) ? e - 2 : e + 1;
 		};
 
+	size_t iterations = 0;
 	for (int i = 0; i < mGenerationData.mNrLoops; i++)
 	{
+		++iterations;
 		std::uniform_int_distribution<size_t> distribution(0, d.halfedges.size() - 1);
 		size_t idx = distribution(gen);
 
@@ -256,13 +270,17 @@ void Dungeon::Generate() {
 		auto& p2Connections = mstVerts[p2].mConnections;
 
 		// If edge already exists continue
-		if (std::find(p1Connections.begin(), p1Connections.end(), p2) != p1Connections.end()
-				|| std::find(p2Connections.begin(), p2Connections.end(), p1) != p2Connections.end())
+		if (std::ranges::find(p1Connections, p2) != p1Connections.end()
+				|| std::ranges::find(p2Connections, p1) != p2Connections.end())
 		{
+			if (iterations > mGenerationData.mNrVertices * 3) {
+				break;
+			}
+			--i;
 			continue;
 		}
 
-		mstEdges.push_back(Dungeon::DungeonEdge(p1, p2));
+		mstEdges.emplace_back(p1, p2);
 		mstVerts[p1].mConnections.push_back(p2);
 		mstVerts[p2].mConnections.push_back(p1);
 	}

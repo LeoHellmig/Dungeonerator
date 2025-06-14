@@ -166,7 +166,7 @@ int main()
     //     }
     // }
 
-    Dungeon::DungeonGenerationData generationData(5000, 10, 0.5, 5.0);
+    Dungeon::DungeonGenerationData generationData(3, 0, 0.5, 5.0, 1, false, true, 0.3f);
     Dungeon myDungeon(generationData, 100.f, 100.f);
     myDungeon.Generate();
 
