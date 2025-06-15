@@ -166,30 +166,112 @@ int main()
     //     }
     // }
 
-    Dungeon::DungeonGenerationData generationData(3, 0, 0.5, 5.0, 1, false, true, 0.3f);
-    Dungeon myDungeon(generationData, 100.f, 100.f);
-    myDungeon.Generate();
+    {
+        std::cout << "5000 Verts: " << std::endl;
+        Dungeon::DungeonGenerationData generationData(1000, 0, 1.0, 1.0, 1, false, true, 0.3f);
+        Dungeon myDungeon(generationData, 100.f, 100.f);
+        myDungeon.Generate();
 
-    std::cout << "Vertices: " << std::endl;
-    for (int i = 0; i < myDungeon.mVertices.size(); i++) {
-        auto& vertex = myDungeon.mVertices[i];
+        std::cout << "Vertices: " << std::endl;
+        for (int i = 0; i < myDungeon.mVertices.size(); i++) {
+            auto& vertex = myDungeon.mVertices[i];
 
-        std::cout << "Vertex " << i << " at: " << vertex.mPx << ", " << vertex.mPy << " size of: " << vertex.mSize << std::endl;
+            std::cout << "Vertex " << i << " at: " << vertex.mPx << ", " << vertex.mPy << " size of: " << vertex.mSize << std::endl;
 
-        std::cout << "Edges: ";
-        for (auto& edge : vertex.mConnections) {
-            std::cout << edge << ", ";
+            std::cout << "Edges: ";
+            for (auto& edge : vertex.mConnections) {
+                std::cout << edge << ", ";
+            }
+
+            std::cout << std::endl;
         }
 
-        std::cout << std::endl;
+        std::cout << "Edges: " << std::endl;
+
+        for (int i = 0; i < myDungeon.mEdges.size(); i++) {
+            auto& edge = myDungeon.mEdges[i];
+            std::cout << i << ": " << edge.mNode1 << ", " << edge.mNode2 << std::endl;
+        }
     }
 
-    std::cout << "Edges: " << std::endl;
+    // {
+    //     std::cout << "100 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(100, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "1000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(1000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "2000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(2000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "5000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(5000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "7500 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(7500, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "10000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(10000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "15000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(15000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "20000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(20000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "30000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(30000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "40000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(40000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "50000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(50000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
 
-    for (int i = 0; i < myDungeon.mEdges.size(); i++) {
-        auto& edge = myDungeon.mEdges[i];
-        std::cout << i << ": " << edge.mNode1 << ", " << edge.mNode2 << std::endl;
-    }
+
 
 //     while (running)
 //     {
