@@ -51,6 +51,12 @@ bool Dungeon::DungeonGenerationData::operator==(const DungeonGenerationData& oth
 
 void Dungeon::Generate() {
 
+#ifdef LOGGING
+	const auto start = Timer::now();
+	auto running = Timer::now();
+	std::cout << "Dungeon generation started" << std::endl;
+#endif
+
 	std::vector<Dungeon::DungeonVertex> verts{};
 	size_t nrEdges = 0;
 
@@ -69,6 +75,11 @@ void Dungeon::Generate() {
 		points.erase(points.end() - (points.size() - static_cast<size_t>(mGenerationData.mNrVertices)), points.end());
 	}
 
+#ifdef LOGGING
+	std::cout << "Poisson in "<< TimeToDouble(Timer::now() - running) << " seconds"<< std::endl;
+	running = Timer::now();
+#endif
+
 	std::vector<float> coords{};
 	coords.reserve(points.size() * 2);
 
@@ -83,6 +94,10 @@ void Dungeon::Generate() {
 		verts.push_back(Dungeon::DungeonVertex(x, y, dis(gen)));
 	}
 
+#ifdef LOGGING
+	std::cout << "Converting poisson to coords in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	delaunator::Delaunator d(coords);
 
@@ -108,6 +123,10 @@ void Dungeon::Generate() {
 		addEdge(static_cast<uint32_t>(d.triangles[i + 2]), static_cast<uint32_t>(d.triangles[i]));
 	}
 
+#ifdef LOGGING
+	std::cout << "Delauny in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	std::vector<uint32_t> mstSet {};
 	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
@@ -142,6 +161,11 @@ void Dungeon::Generate() {
 	}
 
 	uint32_t nrOfSearches = 0;
+
+#ifdef LOGGING
+	std::cout << "MST init "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	size_t pointsSize = points.size();
 	size_t mstSize = mstSet.size();
@@ -186,6 +210,12 @@ void Dungeon::Generate() {
 		mstVerts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
 	}
 
+#ifdef LOGGING
+	std::cout << "Made MST in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	std::cout << "MST required " << nrOfSearches << " searches" << std::endl;
+	running = Timer::now();
+#endif
+
 	auto nextHalfEdge = [](size_t e) {
 			return ((e % 3) == 2) ? e - 2 : e + 1;
 		};
@@ -218,6 +248,11 @@ void Dungeon::Generate() {
 		mstVerts[p1].mConnections.push_back(p2);
 		mstVerts[p2].mConnections.push_back(p1);
 	}
+
+#ifdef LOGGING
+	std::cout << "Added extra edges in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	std::cout << "Dungeon generated in "<< TimeToDouble(Timer::now() - start) << " seconds" << std::endl;
+#endif
 
 	mVertices = mstVerts;
 	mEdges = mstEdges;
