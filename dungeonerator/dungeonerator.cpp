@@ -59,10 +59,8 @@ void Dungeon::Generate() {
 	//std::random_device rd;
 	std::mt19937 gen(mGenerationData.mSeed);
 	std::uniform_real_distribution<float> dis(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
-	std::uniform_int<std::uint32_t> intDistribution(0, std::numeric_limits<uint32_t>().max());
 
 	std::vector<Dungeon::DungeonVertex> verts{};
-	std::vector<std::pair<Dungeon::DungeonEdge, uint32_t>> edges;
 	size_t nrEdges = 0;
 
 	PoissonGenerator::DefaultPRNG PRNG(mGenerationData.mSeed);
@@ -104,16 +102,8 @@ void Dungeon::Generate() {
 	{
 		const auto& addEdge = [&](std::uint32_t a, std::uint32_t b)
 			{
-				if (std::find_if(edges.begin(), edges.end(),
-						[&](std::pair<DungeonEdge, uint32_t> pair)
-							{ return (pair.first.mNode1 == a && pair.first.mNode2 == b) || (pair.first.mNode1 == b && pair.first.mNode2 == a); }) != edges.end())
-				{
-					return;
-				}
-
-				verts[a].mConnections.push_back(edges.size());
-				verts[b].mConnections.push_back(edges.size());
-				edges.emplace_back(Dungeon::DungeonEdge(a, b), intDistribution(gen));
+				verts[a].mConnections.push_back(b);
+				verts[b].mConnections.push_back(a);
 				++nrEdges;
 			};
 
@@ -149,16 +139,15 @@ void Dungeon::Generate() {
 
 	std::vector<Dungeon::DungeonEdge> mstEdges{};
 	std::unordered_set<std::uint32_t> mstKeySet{};
-	std::unordered_set<std::uint32_t> mstVertSet{};
 	mstSet.emplace_back(0);
 	mstKeySet.emplace(0);
-	mstVertSet.emplace(0);
+	std::uniform_int<std::uint32_t> intDistribution(0, INT_MAX);
 
-	// std::vector<std::uint32_t> keys{};
-	// keys.reserve(nrEdges);
-	// for (size_t i = 0; i < nrEdges + 1; i++) {
-	// 	keys.emplace_back(intDistribution(gen));
-	// }
+	std::vector<std::uint32_t> keys{};
+	keys.reserve(nrEdges);
+	for (size_t i = 0; i < nrEdges + 1; i++) {
+		keys.emplace_back(intDistribution(gen));
+	}
 
 	std::size_t nrOfSearches = 0;
 
@@ -169,8 +158,6 @@ void Dungeon::Generate() {
 
 	size_t pointsSize = points.size();
 	size_t mstSize = mstSet.size();
-
-	auto getOtherVertex = [](Dungeon::DungeonEdge& edge, uint32_t a) -> uint32_t { return a == edge.mNode1 ? edge.mNode2 : edge.mNode1; };
 
 	while (mstSize < pointsSize)
 	{
@@ -185,8 +172,8 @@ void Dungeon::Generate() {
 			{
 				++nrOfSearches;
 				std::uint32_t edge = vert.mConnections[j];
-				std::uint32_t key = edges[edge].second;
-				if (key < min && !mstKeySet.contains(edge) && mstVertSet.find(getOtherVertex(edges[edge].first, mstSet[i])) == mstVertSet.end())
+				std::uint32_t key = keys[edge];
+				if (key < min && !mstKeySet.contains(edge))
 				{
 					a = mstSet[i];
 					b = edge;
@@ -197,16 +184,12 @@ void Dungeon::Generate() {
 
 		++mstSize;
 		// Keep adding verts to the set
+		mstSet.emplace_back(b);
 		mstKeySet.emplace(b);
 
-		auto& edge = edges[b].first;
-
-		mstEdges.emplace_back(edge);
-		mstSet.emplace_back(getOtherVertex(edge, a));
-		mstVertSet.emplace(getOtherVertex(edge, a));
-
-		mstVerts[edge.mNode1].mConnections.emplace_back(edge.mNode2);
-		mstVerts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
+		mstEdges.emplace_back(a, b);
+		mstVerts[a].mConnections.emplace_back(b);
+		mstVerts[b].mConnections.emplace_back(a);
 	}
 
 #ifdef LOGGING
