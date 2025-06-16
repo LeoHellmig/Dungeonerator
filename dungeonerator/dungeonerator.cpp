@@ -13,6 +13,8 @@
 
 using Timer = std::chrono::high_resolution_clock;
 
+static_assert(sizeof(uint32_t) == sizeof(unsigned int));
+
 #ifdef LOGGING
 double TimeToDouble(const std::common_type_t<std::chrono::duration<long long, std::ratio<1, 1000000000>>, std::chrono::duration<long long, std::ratio<1, 1000000000>>> time) {
 	return std::chrono::duration_cast<std::chrono::duration<double>>(time).count();
@@ -58,14 +60,11 @@ void Dungeon::Generate() {
 	std::cout << "Dungeon generation started" << std::endl;
 #endif
 
-	std::vector<Dungeon::DungeonVertex> verts{};
-
 	std::mt19937 gen(mGenerationData.mSeed);
-	std::uniform_real_distribution<float> dis(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
-	std::uniform_int<std::uint32_t> intDistribution(0, std::numeric_limits<uint32_t>().max());
+	std::uniform_real_distribution<float> sizeDistribution(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
+	std::uniform_int<std::uint32_t> weightDistribution(0, std::numeric_limits<uint32_t>().max());
 
 	PoissonGenerator::DefaultPRNG PRNG(mGenerationData.mSeed);
-
 	auto points = PoissonGenerator::generatePoissonPoints(mGenerationData.mNrVertices, PRNG, mGenerationData.mIsCircle);
 
 	if (points.size() > static_cast<size_t>(mGenerationData.mNrVertices))
@@ -73,7 +72,9 @@ void Dungeon::Generate() {
 		points.erase(points.end() - (points.size() - static_cast<size_t>(mGenerationData.mNrVertices)), points.end());
 	}
 
-	std::vector<std::vector<std::vector<uint32_t>>> adj(points.size());
+	std::vector<std::vector<std::vector<uint32_t>>> adjacent(points.size());
+	std::vector<Dungeon::DungeonVertex> vertices;
+	vertices.reserve(points.size());
 
 #ifdef LOGGING
 	std::cout << "Poisson in "<< TimeToDouble(Timer::now() - running) << " seconds"<< std::endl;
@@ -85,13 +86,13 @@ void Dungeon::Generate() {
 
 	for (auto& point : points)
 	{
-		float x = point.x * mSizeX;
-		float y = point.y * mSizeY;
+		const float x = point.x * mSizeX;
+		const float y = point.y * mSizeY;
 
 		coords.emplace_back(x);
 		coords.emplace_back(y);
 
-		verts.push_back(Dungeon::DungeonVertex(x, y, dis(gen)));
+		vertices.push_back(Dungeon::DungeonVertex(x, y, sizeDistribution(gen)));
 	}
 
 #ifdef LOGGING
@@ -99,11 +100,16 @@ void Dungeon::Generate() {
 	running = Timer::now();
 #endif
 
-	delaunator::Delaunator d(coords);
+	const delaunator::Delaunator delaunay(coords);
+
+#ifdef LOGGING
+	std::cout << "Delauny in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+	running = Timer::now();
+#endif
 
 	std::unordered_set<uint64_t> edgeSet{};
 
-	for (std::size_t i = 0; i < d.triangles.size(); i+=3)
+	for (std::size_t i = 0; i < delaunay.triangles.size(); i+=3)
 	{
 		const auto& addEdge = [&](uint32_t a, uint32_t b)
 			{
@@ -117,31 +123,24 @@ void Dungeon::Generate() {
 					return;
 				}
 
-				auto weight = intDistribution(gen);
-				adj[a].push_back({b, weight});
-				adj[b].push_back({a, weight});
+				auto weight = weightDistribution(gen);
+				adjacent[a].push_back({b, weight});
+				adjacent[b].push_back({a, weight});
 
 				edgeSet.insert(edgeKey);
 			};
 
-		addEdge(static_cast<uint32_t>(d.triangles[i]), static_cast<uint32_t>(d.triangles[i + 1]));
-		addEdge(static_cast<uint32_t>(d.triangles[i + 1]), static_cast<uint32_t>(d.triangles[i + 2]));
-		addEdge(static_cast<uint32_t>(d.triangles[i + 2]), static_cast<uint32_t>(d.triangles[i]));
+		addEdge(static_cast<uint32_t>(delaunay.triangles[i]), static_cast<uint32_t>(delaunay.triangles[i + 1]));
+		addEdge(static_cast<uint32_t>(delaunay.triangles[i + 1]), static_cast<uint32_t>(delaunay.triangles[i + 2]));
+		addEdge(static_cast<uint32_t>(delaunay.triangles[i + 2]), static_cast<uint32_t>(delaunay.triangles[i]));
 	}
 
-#ifdef LOGGING
-	std::cout << "Delauny in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
-	running = Timer::now();
-#endif
+	std::uniform_real_distribution<float> roomTypeDistribution(0.0f, 1.0f);
 
-	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
-
-	std::uniform_real_distribution<float> roomTypeDist(0.0f, 1.0f);
-
-	for (auto& vert : mstVerts)
+	for (auto& vert : vertices)
 	{
 		if (mGenerationData.mGenerateGameplayContent) {
-			float roomType = roomTypeDist(gen);
+			float roomType = roomTypeDistribution(gen);
 			vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
 		}
 		vert.mConnections.clear();
@@ -149,14 +148,12 @@ void Dungeon::Generate() {
 
 	if (mGenerationData.mGenerateGameplayContent)
 	{
-		mstVerts.front().mType = Dungeon::RoomType::START;
-		mstVerts.back().mType = Dungeon::RoomType::BOSS;
+		vertices.front().mType = Dungeon::RoomType::START;
+		vertices.back().mType = Dungeon::RoomType::BOSS;
 	}
 
-
-	std::vector<Dungeon::DungeonEdge> mstEdges{};
-
-	uint32_t nrOfSearches = 0;
+	std::vector<Dungeon::DungeonEdge> mstEdges;
+	mstEdges.reserve(edgeSet.size());
 
 #ifdef LOGGING
 	std::cout << "MST init "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
@@ -167,9 +164,11 @@ void Dungeon::Generate() {
 	// 1: connected to
 	// 2: parent
 	std::priority_queue<std::tuple<uint32_t, uint32_t, uint32_t>, std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>, std::greater<>> pq;
-	std::vector<bool> visited(verts.size(), false);
+	std::vector<bool> visited(vertices.size(), false);
 
 	pq.emplace(0, 0, std::numeric_limits<uint32_t>().max());
+
+	uint32_t nrOfSearches = 0;
 
 	while(!pq.empty())
 	{
@@ -186,12 +185,11 @@ void Dungeon::Generate() {
 
 		if (parent != std::numeric_limits<uint32_t>().max()) {
 			mstEdges.emplace_back(parent, u);
-			mstVerts[u].mConnections.emplace_back(parent);
-			mstVerts[parent].mConnections.emplace_back(u);
+			vertices[u].mConnections.emplace_back(parent);
+			vertices[parent].mConnections.emplace_back(u);
 		}
 
-
-		for (auto v : adj[u]) {
+		for (auto v : adjacent[u]) {
 			if (visited[v[0]] == false) {
 				pq.emplace(v[1], v[0], u);
 			}
@@ -209,16 +207,16 @@ void Dungeon::Generate() {
 		};
 
 	size_t iterations = 0;
-	std::uniform_int_distribution<size_t> distribution(0, d.halfedges.size() - 1);
+	std::uniform_int_distribution<size_t> distribution(0, delaunay.halfedges.size() - 1);
 	for (int i = 0; i < mGenerationData.mNrLoops; i++)
 	{
 		++iterations;
 		size_t idx = distribution(gen);
-		auto p1 = d.triangles[idx];
-		auto p2 = d.triangles[nextHalfEdge(idx)];
+		auto p1 = delaunay.triangles[idx];
+		auto p2 = delaunay.triangles[nextHalfEdge(idx)];
 
-		auto& p1Connections = mstVerts[p1].mConnections;
-		auto& p2Connections = mstVerts[p2].mConnections;
+		auto& p1Connections = vertices[p1].mConnections;
+		auto& p2Connections = vertices[p2].mConnections;
 
 		// If edge already exists continue
 		if (std::find(p1Connections.begin(), p1Connections.end(), p2) != p1Connections.end()
@@ -232,9 +230,9 @@ void Dungeon::Generate() {
 			continue;
 		}
 
-		mstEdges.push_back(Dungeon::DungeonEdge(p1, p2));
-		mstVerts[p1].mConnections.push_back(p2);
-		mstVerts[p2].mConnections.push_back(p1);
+		mstEdges.emplace_back(p1, p2);
+		vertices[p1].mConnections.push_back(p2);
+		vertices[p2].mConnections.push_back(p1);
 	}
 
 #ifdef LOGGING
@@ -242,214 +240,6 @@ void Dungeon::Generate() {
 	std::cout << "Dungeon generated in "<< TimeToDouble(Timer::now() - start) << " seconds" << std::endl;
 #endif
 
-	mVertices = mstVerts;
+	mVertices = vertices;
 	mEdges = mstEdges;
 }
-
-
-// void Dungeon::Generate() {
-// #ifdef LOGGING
-// 	const auto start = Timer::now();
-// 	auto running = Timer::now();
-// 	std::cout << "Dungeon generation started" << std::endl;
-// #endif
-//
-// 	//std::random_device rd;
-// 	std::mt19937 gen(mGenerationData.mSeed);
-// 	std::uniform_real_distribution<float> dis(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
-// 	std::uniform_int<std::uint32_t> intDistribution(0, std::numeric_limits<uint32_t>().max());
-//
-// 	std::vector<Dungeon::DungeonVertex> verts{};
-// 	std::vector<std::pair<Dungeon::DungeonEdge, uint32_t>> edges;
-// 	size_t nrEdges = 0;
-//
-// 	PoissonGenerator::DefaultPRNG PRNG(mGenerationData.mSeed);
-//
-// 	auto points = PoissonGenerator::generatePoissonPoints(mGenerationData.mNrVertices, PRNG, mGenerationData.mIsCircle);
-//
-// 	if (points.size() > mGenerationData.mNrVertices)
-// 	{
-// 		points.erase(points.end() - (points.size() - static_cast<size_t>(mGenerationData.mNrVertices)), points.end());
-// 	}
-//
-// #ifdef LOGGING
-// 	std::cout << "Poisson in "<< TimeToDouble(Timer::now() - running) << " seconds"<< std::endl;
-// 	running = Timer::now();
-// #endif
-//
-// 	std::vector<float> coords{};
-// 	coords.reserve(points.size() * 2);
-//
-// 	for (auto& point : points)
-// 	{
-// 		float x = point.x * mSizeX;
-// 		float y = point.y * mSizeY;
-//
-// 		coords.emplace_back(x);
-// 		coords.emplace_back(y);
-//
-// 		verts.push_back(Dungeon::DungeonVertex(x, y, dis(gen)));
-// 	}
-//
-// #ifdef LOGGING
-// 	std::cout << "Converting poisson to coords in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
-// 	running = Timer::now();
-// #endif
-//
-// 	delaunator::Delaunator d(coords);
-//
-// 	for (std::size_t i = 0; i < d.triangles.size(); i+=3)
-// 	{
-// 		const auto& addEdge = [&](std::uint32_t a, std::uint32_t b)
-// 			{
-// 				if (std::find_if(edges.begin(), edges.end(),
-// 					[&](std::pair<Dungeon::DungeonEdge, uint32_t> pair)
-// 					{ return (pair.first.mNode1 == a && pair.first.mNode2 == b) || (pair.first.mNode1 == b && pair.first.mNode2 == a); }) != edges.end())
-// 				{
-// 					return;
-// 				}
-// 				verts[a].mConnections.push_back(edges.size());
-// 				verts[b].mConnections.push_back(edges.size());
-// 				edges.emplace_back(Dungeon::DungeonEdge(a, b), intDistribution(gen));
-// 				++nrEdges;
-// 			};
-//
-// 		addEdge(static_cast<std::uint32_t>(d.triangles[i]), static_cast<std::uint32_t>(d.triangles[i + 1]));
-// 		addEdge(static_cast<std::uint32_t>(d.triangles[i + 1]), static_cast<std::uint32_t>(d.triangles[i + 2]));
-// 		addEdge(static_cast<std::uint32_t>(d.triangles[i + 2]), static_cast<std::uint32_t>(d.triangles[i]));
-// 	}
-//
-// #ifdef LOGGING
-// 	std::cout << "Delauny in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
-// 	running = Timer::now();
-// #endif
-//
-// 	std::vector<std::uint32_t> mstSet {};
-//
-// 	std::uniform_real_distribution<float> roomTypeDist(0.0f, 1.0f);
-// 	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
-// 	for (auto& vert : mstVerts)
-// 	{
-// 		float roomType = roomTypeDist(gen);
-//
-// 		if (mGenerationData.mGenerateGameplayContent) {
-// 			vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
-// 		}
-//
-// 		vert.mConnections.clear();
-// 	}
-//
-// 	if (mGenerationData.mGenerateGameplayContent) {
-// 		mstVerts.front().mType = Dungeon::RoomType::START;
-// 		mstVerts.back().mType = Dungeon::RoomType::BOSS;
-// 	}
-//
-// 	std::vector<Dungeon::DungeonEdge> mstEdges{};
-// 	std::unordered_set<std::uint32_t> mstVertSet{};
-// 	std::unordered_set<std::uint32_t> mstKeySet{};
-// 	mstSet.emplace_back(0);
-// 	mstKeySet.emplace(0);
-// 	mstVertSet.emplace(0);
-//
-// 	std::vector<std::uint32_t> keys{};
-// 	keys.reserve(nrEdges);
-// 	for (size_t i = 0; i < nrEdges + 1; i++) {
-// 		keys.emplace_back(intDistribution(gen));
-// 	}
-//
-// 	std::size_t nrOfSearches = 0;
-//
-// #ifdef LOGGING
-// 	std::cout << "MST init "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
-// 	running = Timer::now();
-// #endif
-//
-// 	size_t pointsSize = points.size();
-// 	size_t mstSize = mstSet.size();
-//
-// 	auto getOtherVertex = [](Dungeon::DungeonEdge& edge, uint32_t a) -> uint32_t { return a == edge.mNode1 ? edge.mNode2 : edge.mNode1; };
-//
-// 	while (mstSize < pointsSize)
-// 	{
-// 		std::uint32_t a {};
-// 		std::uint32_t b {};
-// 		std::uint32_t min = INT_MAX;
-//
-// 		for (size_t i = 0; i < mstSize; i++)
-// 		{
-// 			const auto& vert = verts[mstSet[i]];
-// 			for (size_t j = 0; j < vert.mConnections.size(); j++)
-// 			{
-// 				++nrOfSearches;
-// 				std::uint32_t edge = vert.mConnections[j];
-// 				std::uint32_t key = edges[edge].second;
-// 				if (key < min && !mstKeySet.contains(edge) && mstVertSet.find(getOtherVertex(edges[edge].first, mstSet[i])) == mstVertSet.end())
-// 				{
-// 					a = mstSet[i];
-// 					b = edge;
-// 					min = key;
-// 				}
-// 			}
-// 		}
-//
-// 		++mstSize;
-// 		// Keep adding verts to the set
-// 		mstKeySet.emplace(b);
-//
-// 		auto& edge = edges[b].first;
-//
-// 		mstEdges.emplace_back(edge);
-// 		mstSet.emplace_back(getOtherVertex(edge, a));
-// 		mstVertSet.emplace(getOtherVertex(edge, a));
-//
-// 		mstVerts[edge.mNode1].mConnections.emplace_back(edge.mNode2);
-// 		mstVerts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
-// 	}
-//
-// #ifdef LOGGING
-// 	std::cout << "Made MST in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
-// 	std::cout << "MST required " << nrOfSearches << " searches" << std::endl;
-// 	running = Timer::now();
-// #endif
-//
-// 	auto nextHalfEdge = [](size_t e) {
-// 			return ((e % 3) == 2) ? e - 2 : e + 1;
-// 		};
-//
-// 	size_t iterations = 0;
-// 	for (int i = 0; i < mGenerationData.mNrLoops; i++)
-// 	{
-// 		++iterations;
-// 		std::uniform_int_distribution<size_t> distribution(0, d.halfedges.size() - 1);
-// 		size_t idx = distribution(gen);
-//
-// 		auto p1 = d.triangles[idx];
-// 		auto p2 = d.triangles[nextHalfEdge(idx)];
-//
-// 		auto& p1Connections = mstVerts[p1].mConnections;
-// 		auto& p2Connections = mstVerts[p2].mConnections;
-//
-// 		// If edge already exists continue
-// 		if (std::ranges::find(p1Connections, p2) != p1Connections.end()
-// 				|| std::ranges::find(p2Connections, p1) != p2Connections.end())
-// 		{
-// 			if (iterations > mGenerationData.mNrVertices * 3) {
-// 				break;
-// 			}
-// 			--i;
-// 			continue;
-// 		}
-//
-// 		mstEdges.emplace_back(p1, p2);
-// 		mstVerts[p1].mConnections.push_back(p2);
-// 		mstVerts[p2].mConnections.push_back(p1);
-// 	}
-//
-// #ifdef LOGGING
-// 	std::cout << "Added extra edges in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
-// 	std::cout << "Dungeon generated in "<< TimeToDouble(Timer::now() - start) << " seconds" << std::endl;
-// #endif
-//
-// 	mVertices = mstVerts;
-// 	mEdges = mstEdges;
-// }

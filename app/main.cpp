@@ -168,7 +168,7 @@ int main()
 
     {
         std::cout << "10 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(50000, 10000, 1.0, 1.0, 1, false, false, 0.3f);
+        Dungeon::DungeonGenerationData generationData(10, 0, 1.0, 1.0, 1, false, false, 0.3f);
         Dungeon myDungeon(generationData, 100.f, 100.f);
         myDungeon.Generate();
 
