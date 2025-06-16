@@ -9,6 +9,7 @@
 #include <chrono>
 #include <unordered_set>
 #include <forward_list>
+#include <queue>
 
 using Timer = std::chrono::high_resolution_clock;
 
@@ -58,9 +59,6 @@ void Dungeon::Generate() {
 #endif
 
 	std::vector<Dungeon::DungeonVertex> verts{};
-	size_t nrEdges = 0;
-
-	std::vector<std::pair<Dungeon::DungeonEdge, uint32_t>> edges;
 
 	std::mt19937 gen(mGenerationData.mSeed);
 	std::uniform_real_distribution<float> dis(mGenerationData.mMinVertexSize, mGenerationData.mMaxVertexSize);
@@ -74,6 +72,8 @@ void Dungeon::Generate() {
 	{
 		points.erase(points.end() - (points.size() - static_cast<size_t>(mGenerationData.mNrVertices)), points.end());
 	}
+
+	std::vector<std::vector<std::vector<uint32_t>>> adj(points.size());
 
 #ifdef LOGGING
 	std::cout << "Poisson in "<< TimeToDouble(Timer::now() - running) << " seconds"<< std::endl;
@@ -101,23 +101,27 @@ void Dungeon::Generate() {
 
 	delaunator::Delaunator d(coords);
 
-	std::unordered_set<DungeonEdge> edgeSet{};
+	std::unordered_set<uint64_t> edgeSet{};
 
 	for (std::size_t i = 0; i < d.triangles.size(); i+=3)
 	{
 		const auto& addEdge = [&](uint32_t a, uint32_t b)
 			{
-				if (edgeSet.contains(DungeonEdge(a, b)))
+				if (a < b) {
+					std::swap(a, b);
+				}
+				uint64_t edgeKey = ((uint64_t) a << 32) | b;
+
+				if (edgeSet.contains(edgeKey))
 				{
 					return;
 				}
 
-				verts[a].mConnections.push_back(b);
-				verts[b].mConnections.push_back(a);
-				edges.emplace_back(Dungeon::DungeonEdge(a, b), intDistribution(gen));
-				edgeSet.emplace(a, b);
-				edgeSet.emplace(b, a);
-				++nrEdges;
+				auto weight = intDistribution(gen);
+				adj[a].push_back({b, weight});
+				adj[b].push_back({a, weight});
+
+				edgeSet.insert(edgeKey);
 			};
 
 		addEdge(static_cast<uint32_t>(d.triangles[i]), static_cast<uint32_t>(d.triangles[i + 1]));
@@ -130,7 +134,6 @@ void Dungeon::Generate() {
 	running = Timer::now();
 #endif
 
-	std::vector<uint32_t> mstSet {};
 	std::vector<Dungeon::DungeonVertex> mstVerts = verts;
 
 	std::uniform_real_distribution<float> roomTypeDist(0.0f, 1.0f);
@@ -151,15 +154,7 @@ void Dungeon::Generate() {
 	}
 
 
-	std::unordered_set<std::uint32_t> mstKeySet{};
-	std::unordered_set<std::uint32_t> mstVertSet{};
 	std::vector<Dungeon::DungeonEdge> mstEdges{};
-	mstVerts.reserve(points.size());
-
-	mstSet.reserve(points.size());
-	mstSet.emplace_back(0);
-	mstKeySet.emplace(0);
-	mstVertSet.emplace(0);
 
 	uint32_t nrOfSearches = 0;
 
@@ -168,47 +163,39 @@ void Dungeon::Generate() {
 	running = Timer::now();
 #endif
 
-	size_t pointsSize = points.size();
-	size_t mstSize = mstSet.size();
+	// 0: weight
+	// 1: connected to
+	// 2: parent
+	std::priority_queue<std::tuple<uint32_t, uint32_t, uint32_t>, std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>, std::greater<>> pq;
+	std::vector<bool> visited(verts.size(), false);
 
-	auto getOtherVertex = [](Dungeon::DungeonEdge& edge, uint32_t a) -> uint32_t { return a == edge.mNode1 ? edge.mNode2 : edge.mNode1; };
+	pq.emplace(0, 0, std::numeric_limits<uint32_t>().max());
 
-	// <vert, nextvert>
-	while (mstSize < pointsSize)
+	while(!pq.empty())
 	{
-		std::uint32_t a {}; // Current vertex in mstSet
-		std::uint32_t b {}; // index to edge in edges
-		std::uint32_t min = std::numeric_limits<uint32_t>().max();
+		auto [wt, u, parent] = pq.top();
+		pq.pop();
 
-		for (size_t i = 0; i < mstSize; i++)
-		{
-			const auto& vert = verts[mstSet[i]];
-			for (size_t j = 0; j < vert.mConnections.size(); j++)
-			{
-				++nrOfSearches;
-				std::uint32_t edge = vert.mConnections[j];
-				std::uint32_t key = edges[edge].second;
-				if (key < min && !mstKeySet.contains(edge) && mstVertSet.find(getOtherVertex(edges[edge].first, mstSet[i])) == mstVertSet.end())
-				{
-					a = mstSet[i];
-					b = edge;
-					min = key;
-				}
-			}
+		++nrOfSearches;
+
+		if (visited[u] == true) {
+			continue;
 		}
 
-		++mstSize;
-		// Keep adding verts to the set
-		mstKeySet.emplace(b);
+		visited[u] = true;
 
-		auto& edge = edges[b].first;
+		if (parent != std::numeric_limits<uint32_t>().max()) {
+			mstEdges.emplace_back(parent, u);
+			mstVerts[u].mConnections.emplace_back(parent);
+			mstVerts[parent].mConnections.emplace_back(u);
+		}
 
-		mstEdges.emplace_back(edge);
-		mstSet.emplace_back(getOtherVertex(edge, a));
-		mstVertSet.emplace(getOtherVertex(edge, a));
 
-		mstVerts[edge.mNode1].mConnections.emplace_back(edge.mNode2);
-		mstVerts[edge.mNode2].mConnections.emplace_back(edge.mNode1);
+		for (auto v : adj[u]) {
+			if (visited[v[0]] == false) {
+				pq.emplace(v[1], v[0], u);
+			}
+		}
 	}
 
 #ifdef LOGGING
