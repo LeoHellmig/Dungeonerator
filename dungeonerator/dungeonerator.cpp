@@ -70,7 +70,7 @@ void Dungeon::Generate() {
 
 	auto points = PoissonGenerator::generatePoissonPoints(mGenerationData.mNrVertices, PRNG, mGenerationData.mIsCircle);
 
-	if (points.size() > mGenerationData.mNrVertices)
+	if (points.size() > static_cast<size_t>(mGenerationData.mNrVertices))
 	{
 		points.erase(points.end() - (points.size() - static_cast<size_t>(mGenerationData.mNrVertices)), points.end());
 	}
@@ -101,20 +101,22 @@ void Dungeon::Generate() {
 
 	delaunator::Delaunator d(coords);
 
+	std::unordered_set<DungeonEdge> edgeSet{};
+
 	for (std::size_t i = 0; i < d.triangles.size(); i+=3)
 	{
 		const auto& addEdge = [&](uint32_t a, uint32_t b)
 			{
-				if (std::find_if(edges.begin(), edges.end(),
-					[&](std::pair<Dungeon::DungeonEdge, uint32_t> pair)
-						{ return (pair.first.mNode1 == a && pair.first.mNode2 == b) || (pair.first.mNode1 == b && pair.first.mNode2 == a); }) != edges.end())
+				if (edgeSet.contains(DungeonEdge(a, b)))
 				{
 					return;
 				}
 
-				verts[a].mConnections.push_back(edges.size());
-				verts[b].mConnections.push_back(edges.size());
-				edges.emplace_back(std::make_pair(Dungeon::DungeonEdge(a, b), intDistribution(gen)));
+				verts[a].mConnections.push_back(b);
+				verts[b].mConnections.push_back(a);
+				edges.emplace_back(Dungeon::DungeonEdge(a, b), intDistribution(gen));
+				edgeSet.emplace(a, b);
+				edgeSet.emplace(b, a);
 				++nrEdges;
 			};
 
@@ -135,14 +137,19 @@ void Dungeon::Generate() {
 
 	for (auto& vert : mstVerts)
 	{
-		float roomType = roomTypeDist(gen);
-
-		vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
+		if (mGenerationData.mGenerateGameplayContent) {
+			float roomType = roomTypeDist(gen);
+			vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
+		}
 		vert.mConnections.clear();
 	}
 
-	mstVerts.front().mType = Dungeon::RoomType::START;
-	mstVerts.back().mType = Dungeon::RoomType::BOSS;
+	if (mGenerationData.mGenerateGameplayContent)
+	{
+		mstVerts.front().mType = Dungeon::RoomType::START;
+		mstVerts.back().mType = Dungeon::RoomType::BOSS;
+	}
+
 
 	std::unordered_set<std::uint32_t> mstKeySet{};
 	std::unordered_set<std::uint32_t> mstVertSet{};
@@ -153,12 +160,6 @@ void Dungeon::Generate() {
 	mstSet.emplace_back(0);
 	mstKeySet.emplace(0);
 	mstVertSet.emplace(0);
-
-	std::vector<std::uint32_t> keys{};
-	keys.reserve(nrEdges);
-	for (int i = 0; i < nrEdges; i++) {
-		keys.emplace_back(intDistribution(gen));
-	}
 
 	uint32_t nrOfSearches = 0;
 
@@ -187,7 +188,7 @@ void Dungeon::Generate() {
 				++nrOfSearches;
 				std::uint32_t edge = vert.mConnections[j];
 				std::uint32_t key = edges[edge].second;
-				if (key < min && mstKeySet.find(edge) == mstKeySet.end() && mstVertSet.find(getOtherVertex(edges[edge].first, mstSet[i])) == mstVertSet.end())
+				if (key < min && !mstKeySet.contains(edge) && mstVertSet.find(getOtherVertex(edges[edge].first, mstSet[i])) == mstVertSet.end())
 				{
 					a = mstSet[i];
 					b = edge;

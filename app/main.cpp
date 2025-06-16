@@ -168,7 +168,7 @@ int main()
 
     {
         std::cout << "10 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(10, 0, 1.0, 1.0, 1, false, true, 0.3f);
+        Dungeon::DungeonGenerationData generationData(10000, 0, 1.0, 1.0, 1, false, false, 0.3f);
         Dungeon myDungeon(generationData, 100.f, 100.f);
         myDungeon.Generate();
 
@@ -194,82 +194,82 @@ int main()
         // }
     }
 
-    {
-        std::cout << "100 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(100, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "1000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(1000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "2000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(2000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "5000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(5000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "7500 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(7500, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "10000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(10000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "15000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(15000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "20000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(20000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "30000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(30000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "40000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(40000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
-
-    {
-        std::cout << "50000 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(50000, 0, 0.5, 5.0, 1, false, true, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
-    }
+    // {
+    //     std::cout << "100 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(100, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "1000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(1000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "2000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(2000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "5000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(5000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "7500 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(7500, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "10000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(10000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "15000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(15000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "20000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(20000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "30000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(30000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "40000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(40000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
+    //
+    // {
+    //     std::cout << "50000 Verts: " << std::endl;
+    //     Dungeon::DungeonGenerationData generationData(50000, 0, 0.5, 5.0, 1, false, true, 0.3f);
+    //     Dungeon myDungeon(generationData, 100.f, 100.f);
+    //     myDungeon.Generate();
+    // }
 
 
 
