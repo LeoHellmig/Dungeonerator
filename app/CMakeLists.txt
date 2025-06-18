@@ -8,3 +8,5 @@ add_executable(${PROJECT_NAME} "main.cpp")
 target_include_directories(${PROJECT_NAME} PUBLIC dungeonerator grammars external)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC dungeonerator grammars external)
+
+add_compile_definitions(-DLOGGING)
