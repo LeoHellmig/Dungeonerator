@@ -9,6 +9,8 @@
 #include <random>
 #include <unordered_set>
 #include <queue>
+#include <vector>
+#include <iostream>
 
 #ifdef LOGGING
 	#include <chrono>
@@ -196,7 +198,6 @@ private:
 				adjacent[a].push_back({b, weight});
 				adjacent[b].push_back({a, weight});
 
-				edgeSet.insert(edgeKey);
 			};
 
 		addEdge(static_cast<uint32_t>(delaunay.triangles[i]), static_cast<uint32_t>(delaunay.triangles[i + 1]));
