@@ -98,7 +98,7 @@ public:
 
     DungeonGenerationData mGenerationData{};
 
-    explicit Dungeon(DungeonGenerationData generationData)
+    explicit Dungeon(const DungeonGenerationData &generationData)
         : mGenerationData(generationData)
     {
         Generate();
