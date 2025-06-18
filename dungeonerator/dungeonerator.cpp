@@ -15,42 +15,22 @@ using Timer = std::chrono::high_resolution_clock;
 
 static_assert(sizeof(uint32_t) == sizeof(unsigned int));
 
+using namespace DungeonGenerator;
+
 #ifdef LOGGING
 double TimeToDouble(const std::common_type_t<std::chrono::duration<long long, std::ratio<1, 1000000000>>, std::chrono::duration<long long, std::ratio<1, 1000000000>>> time) {
 	return std::chrono::duration_cast<std::chrono::duration<double>>(time).count();
 }
 #endif
 
-bool Dungeon::DungeonVertex::operator==(const DungeonVertex& other) const
+template<> struct std::hash<DungeonEdge>
 {
-	return this->mSize == other.mSize
-		&& this->mPx == other.mPx
-		&& this->mPy == other.mPy
-		&& this->mConnections == other.mConnections;
-}
-
-bool Dungeon::DungeonEdge::operator==(const DungeonEdge& other) const
-{
-	return this->mNode1 == other.mNode1
-		&& this->mNode2 == other.mNode2;
-}
-
-template<> struct std::hash<Dungeon::DungeonEdge>
-{
-	std::size_t operator()(const Dungeon::DungeonEdge& s) const noexcept
+	std::size_t operator()(const DungeonEdge& s) const noexcept
 	{
 		uint64_t combined = (uint64_t(s.mNode1) << 32) | s.mNode2;
 		return std::hash<uint64_t>{}(combined);
 	}
 };
-
-bool Dungeon::DungeonGenerationData::operator==(const DungeonGenerationData& other) const
-{
-	return this->mNrVertices == other.mNrVertices
-		&& this->mNrLoops == other.mNrLoops
-		&& this->mMinVertexSize == other.mMinVertexSize
-		&& this->mMaxVertexSize == other.mMaxVertexSize;
-}
 
 void Dungeon::Generate() {
 
@@ -73,7 +53,7 @@ void Dungeon::Generate() {
 	}
 
 	std::vector<std::vector<std::vector<uint32_t>>> adjacent(points.size());
-	std::vector<Dungeon::DungeonVertex> vertices;
+	std::vector<DungeonVertex> vertices;
 	vertices.reserve(points.size());
 
 #ifdef LOGGING
@@ -86,13 +66,13 @@ void Dungeon::Generate() {
 
 	for (auto& point : points)
 	{
-		const float x = point.x * mSizeX;
-		const float y = point.y * mSizeY;
+		const float x = point.x * mGenerationData.mSizeX;
+		const float y = point.y * mGenerationData.mSizeY;
 
 		coords.emplace_back(x);
 		coords.emplace_back(y);
 
-		vertices.push_back(Dungeon::DungeonVertex(x, y, sizeDistribution(gen)));
+		vertices.push_back(DungeonVertex(x, y, sizeDistribution(gen)));
 	}
 
 #ifdef LOGGING
@@ -141,23 +121,24 @@ void Dungeon::Generate() {
 	{
 		if (mGenerationData.mGenerateGameplayContent) {
 			float roomType = roomTypeDistribution(gen);
-			vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? Dungeon::RoomType::TREASURE : Dungeon::RoomType::ENEMY;
+			vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? RoomType::TREASURE : RoomType::ENEMY;
 		}
 		vert.mConnections.clear();
 	}
 
 	if (mGenerationData.mGenerateGameplayContent)
 	{
-		vertices.front().mType = Dungeon::RoomType::START;
-		vertices.back().mType = Dungeon::RoomType::BOSS;
+		vertices.front().mType = RoomType::START;
+		vertices.back().mType = RoomType::BOSS;
 	}
 
-	std::vector<Dungeon::DungeonEdge> mstEdges;
+	std::vector<DungeonEdge> mstEdges;
 	mstEdges.reserve(edgeSet.size());
 
 #ifdef LOGGING
 	std::cout << "MST init "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
 	running = Timer::now();
+	uint32_t nrOfSearches = 0;
 #endif
 
 	// 0: weight
@@ -168,14 +149,14 @@ void Dungeon::Generate() {
 
 	pq.emplace(0, 0, std::numeric_limits<uint32_t>().max());
 
-	uint32_t nrOfSearches = 0;
-
 	while(!pq.empty())
 	{
 		auto [wt, u, parent] = pq.top();
 		pq.pop();
 
+#ifdef LOGGING
 		++nrOfSearches;
+#endif
 
 		if (visited[u] == true) {
 			continue;

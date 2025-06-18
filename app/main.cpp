@@ -167,10 +167,10 @@ int main()
     // }
 
     {
-        std::cout << "10 Verts: " << std::endl;
-        Dungeon::DungeonGenerationData generationData(10, 0, 1.0, 1.0, 1, false, false, 0.3f);
-        Dungeon myDungeon(generationData, 100.f, 100.f);
-        myDungeon.Generate();
+        std::cout << "75000 Verts: " << std::endl;
+
+        DungeonGenerator::DungeonGenerationData generationData(75000, 4000, 1.0, {1.0f, 1.0f}, {100.0f, 100.0f}, false, true, 0.3f);
+        DungeonGenerator::Dungeon myDungeon(generationData);
 
         // std::cout << "Vertices: " << std::endl;
         // for (int i = 0; i < myDungeon.mVertices.size(); i++) {
