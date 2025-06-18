@@ -2,9 +2,10 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
-#include "generationUtils/delaunator.hpp"
-#include "generationUtils/PoissonGenerator.hpp"
+#include "generationUtils/delaunator.hpp" // External library for delaunay triangulation
+#include "generationUtils/PoissonGenerator.hpp" // External library for poisson disk generation
 #pragma clang diagnostic pop
+
 #include <random>
 #include <chrono>
 #include <unordered_set>
@@ -110,8 +111,6 @@ private:
     using Timer = std::chrono::high_resolution_clock;
 
     static_assert(sizeof(uint32_t) == sizeof(unsigned int));
-
-    using namespace DungeonGenerator;
 
 #ifdef LOGGING
     inline double TimeToDouble(const std::common_type_t<std::chrono::duration<long long, std::ratio<1, 1000000000>>, std::chrono::duration<long long, std::ratio<1, 1000000000>>> time) {
