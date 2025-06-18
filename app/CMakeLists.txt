@@ -9,4 +9,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC dungeonerator grammars externa
 
 target_link_libraries(${PROJECT_NAME} PUBLIC dungeonerator grammars external)
 
-add_compile_definitions(-DLOGGING)
+target_compile_definitions(dungeonerator INTERFACE -DLOGGING)
