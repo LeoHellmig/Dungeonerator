@@ -72,7 +72,7 @@ void Dungeon::Generate() {
 		coords.emplace_back(x);
 		coords.emplace_back(y);
 
-		vertices.push_back(DungeonVertex(x, y, sizeDistribution(gen)));
+		vertices.emplace_back(x, y, sizeDistribution(gen));
 	}
 
 #ifdef LOGGING
@@ -115,19 +115,15 @@ void Dungeon::Generate() {
 		addEdge(static_cast<uint32_t>(delaunay.triangles[i + 2]), static_cast<uint32_t>(delaunay.triangles[i]));
 	}
 
-	std::uniform_real_distribution<float> roomTypeDistribution(0.0f, 1.0f);
+	if (mGenerationData.mGenerateGameplayContent) {
+		std::uniform_real_distribution<float> roomTypeDistribution(0.0f, 1.0f);
 
-	for (auto& vert : vertices)
-	{
-		if (mGenerationData.mGenerateGameplayContent) {
-			float roomType = roomTypeDistribution(gen);
-			vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? RoomType::TREASURE : RoomType::ENEMY;
+		for (auto& vert : vertices)
+		{
+				float roomType = roomTypeDistribution(gen);
+				vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? RoomType::TREASURE : RoomType::ENEMY;
 		}
-		vert.mConnections.clear();
-	}
 
-	if (mGenerationData.mGenerateGameplayContent)
-	{
 		vertices.front().mType = RoomType::START;
 		vertices.back().mType = RoomType::BOSS;
 	}

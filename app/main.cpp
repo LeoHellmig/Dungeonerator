@@ -169,29 +169,29 @@ int main()
     {
         std::cout << "75000 Verts: " << std::endl;
 
-        DungeonGenerator::DungeonGenerationData generationData(75000, 4000, 1.0, {1.0f, 1.0f}, {100.0f, 100.0f}, false, true, 0.3f);
+        DungeonGenerator::DungeonGenerationData generationData(15, 0, 1.0, {1.0f, 1.0f}, {100.0f, 100.0f}, false, true, 0.3f);
         DungeonGenerator::Dungeon myDungeon(generationData);
 
-        // std::cout << "Vertices: " << std::endl;
-        // for (int i = 0; i < myDungeon.mVertices.size(); i++) {
-        //     auto& vertex = myDungeon.mVertices[i];
-        //
-        //     std::cout << "Vertex " << i << " at: " << vertex.mPx << ", " << vertex.mPy << " size of: " << vertex.mSize << std::endl;
-        //
-        //     std::cout << "Edges: ";
-        //     for (auto& edge : vertex.mConnections) {
-        //         std::cout << edge << ", ";
-        //     }
-        //
-        //     std::cout << std::endl;
-        // }
-        //
-        // std::cout << "Edges: " << std::endl;
-        //
-        // for (int i = 0; i < myDungeon.mEdges.size(); i++) {
-        //     auto& edge = myDungeon.mEdges[i];
-        //     std::cout << i << ": " << edge.mNode1 << ", " << edge.mNode2 << std::endl;
-        // }
+        std::cout << "Vertices: " << std::endl;
+        for (int i = 0; i < myDungeon.mVertices.size(); i++) {
+            auto& vertex = myDungeon.mVertices[i];
+
+            std::cout << "Vertex " << i << " at: " << vertex.mPx << ", " << vertex.mPy << " size of: " << vertex.mSize << std::endl;
+
+            std::cout << "Edges: ";
+            for (auto& edge : vertex.mConnections) {
+                std::cout << edge << ", ";
+            }
+
+            std::cout << std::endl;
+        }
+
+        std::cout << "Edges: " << std::endl;
+
+        for (int i = 0; i < myDungeon.mEdges.size(); i++) {
+            auto& edge = myDungeon.mEdges[i];
+            std::cout << i << ": " << edge.mNode1 << ", " << edge.mNode2 << std::endl;
+        }
     }
 
     // {
