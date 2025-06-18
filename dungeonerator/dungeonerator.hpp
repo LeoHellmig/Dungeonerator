@@ -204,19 +204,6 @@ private:
 		addEdge(static_cast<uint32_t>(delaunay.triangles[i + 2]), static_cast<uint32_t>(delaunay.triangles[i]));
 	}
 
-	if (mGenerationData.mGenerateGameplayContent) {
-		std::uniform_real_distribution<float> roomTypeDistribution(0.0f, 1.0f);
-
-		for (auto& vert : vertices)
-		{
-				float roomType = roomTypeDistribution(gen);
-				vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? RoomType::TREASURE : RoomType::ENEMY;
-		}
-
-		vertices.front().mType = RoomType::START;
-		vertices.back().mType = RoomType::BOSS;
-	}
-
 	std::vector<DungeonEdge> mstEdges;
 	mstEdges.reserve(edgeSet.size());
 
@@ -267,6 +254,25 @@ private:
 	std::cout << "MST required " << nrOfSearches << " searches" << std::endl;
 	running = Timer::now();
 #endif
+
+
+    if (mGenerationData.mGenerateGameplayContent) {
+    	std::uniform_real_distribution<float> roomTypeDistribution(0.0f, 1.0f);
+
+    	for (auto& vert : vertices)
+    	{
+    		float roomType = roomTypeDistribution(gen);
+    		vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? RoomType::TREASURE : RoomType::ENEMY;
+    	}
+
+    	vertices.front().mType = RoomType::START;
+    	vertices.back().mType = RoomType::BOSS;
+
+#ifdef LOGGING
+    	std::cout << "Generated room types in "<< TimeToDouble(Timer::now() - running) << " seconds" << std::endl;
+    	running = Timer::now();
+#endif
+    }
 
 	auto nextHalfEdge = [](size_t e) {
 			return ((e % 3) == 2) ? e - 2 : e + 1;
