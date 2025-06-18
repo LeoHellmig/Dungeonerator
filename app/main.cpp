@@ -8,18 +8,18 @@
 #include "graph.hpp"
 #include "dungeonerator.hpp"
 
-#pragma warning(disable: 4201) // Disable MSVC extension warnings
-#include <SDL3/SDL_opengl.h>
+//#pragma warning(disable: 4201) // Disable MSVC extension warnings
+//#include <SDL3/SDL_opengl.h>
 
-constexpr int SCR_WIDTH = 1280;
-constexpr int SCR_HEIGHT = 720;
-
-constexpr float PI = 3.14159265359f;
-constexpr float TWOPI = PI * 2.f;
-
-SDL_Window* window;
-SDL_Surface* surface;
-uint32_t* pixels;
+// constexpr int SCR_WIDTH = 1280;
+// constexpr int SCR_HEIGHT = 720;
+//
+// constexpr float PI = 3.14159265359f;
+// constexpr float TWOPI = PI * 2.f;
+//
+// SDL_Window* window;
+// SDL_Surface* surface;
+// uint32_t* pixels;
 
 int main()
 {
