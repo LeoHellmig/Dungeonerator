@@ -29,12 +29,12 @@ struct DungeonSize {
     float mSizeY = 100.0f;
 };
 
-struct DungeonGenerationData
+struct GenerationData
 {
-    DungeonGenerationData() = default;
-    DungeonGenerationData(int verts, int loops, int seed, VertexSizeBounds vertexSizeBounds = {1.0f, 1.0f}, DungeonSize dungeonSize = {100.0f, 100.0f}, bool isCircle = true, bool generateGameplayContent = false, float treasureRoomPercentage = 0.3f)
-        :   mNrVertices(std::max(verts, 3)),
-            mNrLoops(std::min(loops, verts)),
+    GenerationData() = default;
+    GenerationData(int vertexCount, int loops, int seed, VertexSizeBounds vertexSizeBounds = {1.0f, 1.0f}, DungeonSize dungeonSize = {100.0f, 100.0f}, bool isCircle = true, bool generateGameplayContent = false, float treasureRoomPercentage = 0.3f)
+        :   mNrVertices(std::max(vertexCount, 3)),
+            mNrLoops(std::min(loops, vertexCount)),
             mMinVertexSize(vertexSizeBounds.mMin),
             mMaxVertexSize(vertexSizeBounds.mMax),
             mSizeX(dungeonSize.mSizeX),
@@ -101,9 +101,9 @@ public:
     std::vector<DungeonVertex> mVertices{};
     std::vector<DungeonEdge> mEdges{};
 
-    DungeonGenerationData mGenerationData{};
+    GenerationData mGenerationData{};
 
-    explicit Dungeon(const DungeonGenerationData &generationData)
+    explicit Dungeon(const GenerationData &generationData)
         : mGenerationData(generationData)
     {
         Generate();
@@ -258,11 +258,13 @@ private:
 
 
     if (mGenerationData.mGenerateGameplayContent) {
+
+    	std::mt19937 typeGen(mGenerationData.mSeed);
     	std::uniform_real_distribution<float> roomTypeDistribution(0.0f, 1.0f);
 
     	for (auto& vert : vertices)
     	{
-    		float roomType = roomTypeDistribution(gen);
+    		float roomType = roomTypeDistribution(typeGen);
     		vert.mType = roomType < mGenerationData.mTreasureRoomPercentage ? RoomType::TREASURE : RoomType::ENEMY;
     	}
 
